@@ -1,0 +1,18 @@
+ on run args
+   if class of args is list then -- arguments passed come in as a list
+        set inputpath to item 1 of args
+        set outputpath to item 2 of args
+
+        tell application "Adobe Photoshop (Beta)"
+            activate
+            open alias inputpath as PDF with options {class:PDF open options, mode:CMYK, resolution:600, use antialias:true, constrain proportions:true}
+            do action "save_jpg" from "Rastern"
+            
+            set myOptions to {class:JPEG save options, embed color profile:true, quality:12}
+            set theDocument to current document
+            save theDocument in file outputpath as JPEG with options myOptions
+
+            close every document without saving
+        end tell
+   end if
+end run
