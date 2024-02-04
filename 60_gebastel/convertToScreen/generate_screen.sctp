@@ -1,0 +1,34 @@
+ on run args
+   if class of args is list then -- arguments passed come in as a list
+        set inputpath to item 1 of args
+        set c_outputpath to item 2 of args
+        set m_outputpath to item 3 of args
+        set y_outputpath to item 4 of args
+        set k_outputpath to item 5 of args
+
+        tell application "Adobe Photoshop (Beta)"
+            activate
+            open alias inputpath
+            set myOptions to {class:TIFF save options, byte order:Mac OS, embed color profile: false, image compression: LZW, save alpha channels: false, save layers: false}
+
+            do action "process_cyan" from "Rastern"
+            save current document in file c_outputpath as TIFF with options myOptions
+            close current document
+
+            do action "process_magenta" from "Rastern"
+            save current document in file m_outputpath as TIFF with options myOptions
+            close current document
+
+            do action "process_yellow" from "Rastern"
+            save current document in file y_outputpath as TIFF with options myOptions
+            close current document
+
+            do action "process_black" from "Rastern"
+            save current document in file k_outputpath as TIFF with options myOptions
+            close current document
+
+            -- close halftone image
+            close current document
+        end tell
+   end if
+end run

@@ -1,0 +1,19 @@
+ on run args
+   if class of args is list then -- arguments passed come in as a list
+        set inputpath to item 1 of args
+        set k_outputpath to item 2 of args
+
+        tell application "Adobe Photoshop (Beta)"
+            activate
+            open alias inputpath
+            set myOptions to {class:JPEG save options, embed color profile:true, quality:12}
+
+            do action "Rastern" from "Rastern"
+            save current document in file k_outputpath as JPEG with options myOptions
+            close current document
+
+            -- close halftone image
+            close current document
+        end tell
+   end if
+end run
