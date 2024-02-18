@@ -3,7 +3,6 @@ from tqdm import tqdm
 import sys
 sys.path.append('../../30_data_tools')
 from helper import load_dotenv
-from create_4c_image import create_4c_tiff
 from PIL import Image
 from datetime import datetime
 import pandas as pd

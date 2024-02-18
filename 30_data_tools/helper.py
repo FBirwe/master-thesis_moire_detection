@@ -92,11 +92,14 @@ def load_dotenv():
     config['GENERIC_GENERATED_DATA_DIR'] = config['GENERIC_DATA_DIR'] / '01_generated_data'
     config['GENERIC_INFORMATION_DATA_DIR'] = config['GENERIC_DATA_DIR'] / '02_information_data'
     config['GENERIC_LABELSTUDIO_DATA_DIR'] = config['DATA_DIR'] / '11_labelstudio_generic_data'
+    config['MODEL_DIR'] = (script_file_path / config['MODEL_DIR']).resolve()
+    config['PATTERN_DIR'] = (script_file_path / config['PATTERN_DIR']).resolve()
     config['SORT_DIR'] = config['DATA_DIR'] / config['SORT_DIR']
     config['DB_PATH'] = script_file_path / config['DB_PATH']
     config['LABELING_JSON_PATH'] = Path( config['LABELING_JSON_PATH'] )
     config['LOFI_DPI'] = int(config['LOFI_DPI'])
     config['LOFI_SCREEN_DPI'] = int(config['LOFI_SCREEN_DPI'])
+    config['TRAIN_DATA_DPI'] = int(config['TRAIN_DATA_DPI'])
     config['LABEL_STUDIO_DIR'] = config['DATA_DIR'] / config['LABEL_STUDIO_DIR']
     config['LABEL_STUDIO_DB_PATH'] = Path( config['LABEL_STUDIO_DB_PATH'] )
     os.environ['TESSDATA_PREFIX'] = str(Path( config['TESSDATA_PREFIX'] ).resolve())

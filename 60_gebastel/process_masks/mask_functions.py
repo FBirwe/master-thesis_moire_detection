@@ -148,19 +148,55 @@ def get_iou( whole_mask_a, whole_mask_b ):
     return intersection / union
 
 
+def calc_bbox_iou( bbox_a, bbox_b ):
+    intersection_box = [
+        max([bbox_a[0], bbox_b[0]]),
+        max([bbox_a[1], bbox_b[1]]),
+        min([bbox_a[0]+bbox_a[2], bbox_b[0]+bbox_b[2]]),
+        min([bbox_a[1]+bbox_a[3], bbox_b[1]+bbox_b[3]])
+    ]
+    intersection = (intersection_box[0] - intersection_box[2]) * (intersection_box[1] - intersection_box[3])
+
+    union_box = [
+        min([bbox_a[0], bbox_b[0]]),
+        min([bbox_a[1], bbox_b[1]]),
+        max([bbox_a[0]+bbox_a[2], bbox_b[0]+bbox_b[2]]),
+        max([bbox_a[1]+bbox_a[3], bbox_b[1]+bbox_b[3]])
+    ]
+    union = (union_box[0] - union_box[2]) * (union_box[1] - union_box[3])
+
+    if intersection < 0:
+        return 0
+    
+    return intersection / union
+
+
 def filter_intersected_masks( masks ):
     config = get_config()
     delete = []
-    whole_masks = [get_whole_mask(m) for m in masks]
+    whole_masks = {}
+    [get_whole_mask(m) for m in masks]
 
     for a in range(len(masks)):
         if a not in delete:
             for b in range(a+1, len(masks)):
                 if b not in delete:
-                    iou = get_iou( whole_masks[a],  whole_masks[b] )
+                    iou_bbox = calc_bbox_iou(
+                        masks[a]['bbox'],
+                        masks[b]['bbox']
+                    )
+
+                    if iou_bbox >= config['MIN_MASK_OCR_INTERSECTION']:
+                        if a not in whole_masks:
+                            whole_masks[a] = get_whole_mask(masks[a])
+
+                        if b not in whole_masks:
+                            whole_masks[b] = get_whole_mask(masks[a])
+                    
+                        iou = get_iou( whole_masks[a],  whole_masks[b] )
     
-                    if iou >= config['MIN_MASK_OCR_INTERSECTION']:
-                        delete.append(b)
+                        if iou >= config['MIN_MASK_OCR_INTERSECTION']:
+                            delete.append(b)
     
     return [masks[i] for i in range(len(masks)) if i not in delete]
 

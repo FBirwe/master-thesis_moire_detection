@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../../30_data_tools/')
+
 from pathlib import Path
 import random
 from PIL import Image
@@ -7,13 +10,15 @@ from pattern_effects.trapezoidal_distortion import distort_trapezoidal, distort_
 from pattern_effects.roll import roll_image
 from pattern_effects.pillow_deform import pillow_deform
 from pattern_effects.wave_deform import wave_deform
+from helper import load_dotenv
 import numpy as np
+from random import shuffle
 
 
 def get_pattern_img( pattern_name, config ):
     Image.MAX_IMAGE_PIXELS = None
 
-    pattern_path = Path('../../22_andere_daten/patterns/') / f'{ pattern_name }.tif'
+    pattern_path = load_dotenv()['PATTERN_DIR'] / f'{ pattern_name }.tif'
     pattern_img = Image.open(pattern_path)
     pattern_resize_factor = config['processing_dpi'] / 2400
     pattern_img = pattern_img.convert('L').resize(
@@ -97,6 +102,8 @@ def get_pattern_style(config):
     }
     adjustments_to_use = get_adjustments_to_use([], config)
     row['pattern'] = random.choice(config['available_patterns'])
+    row['effect_order'] = adjustments_to_use
+    shuffle( row['effect_order'] )
 
     if 'blow_up_centered' in adjustments_to_use:
         row['use_blow_up_centered'] = True
@@ -240,74 +247,73 @@ def get_pattern_style(config):
 def get_pattern_img_by_style( row, config ):
     pattern_img = get_pattern_img( row["pattern"], config )
 
-    # Effekte anwenden
-    if row['use_blow_up_centered']:
-        pattern_img = blow_up( pattern_img, row['centered_c'] )
+    for effect in row['effect_order']:
+        # Effekte anwenden
+        if effect == 'blow_up_centered':
+            pattern_img = blow_up( pattern_img, row['centered_c'] )
 
-    if row['use_blow_up_region']:
-        for i in range(int(row['blow_up_count'])):
-            radius = row['blow_up_radius'][i]
-            center = row['blow_up_center'][i]
-            c = row['blow_up_c'][i]
+        if effect == 'blow_up_region':
+            for i in range(int(row['blow_up_count'])):
+                radius = row['blow_up_radius'][i]
+                center = row['blow_up_center'][i]
+                c = row['blow_up_c'][i]
+                
+                pattern_img = blow_up_region( pattern_img, radius, center, c )
+
+        if effect == 'contract_region':
+            for i in range(int(row['contract_count'])):
+                radius = row['contract_radius'][i]
+                center = row['contract_center'][i]
+                c = row['contract_c'][i]
+                
+                pattern_img = contract_region( pattern_img, radius, center, c )
+
+        if effect == 'contract_centered':
+            pattern_img = contract( pattern_img, row['centered_c'] )
+
+        if effect == 'pillow_disortion':
+            pattern_img = pillow_deform( pattern_img, row['pillow_depth_x'], row['pillow_depth_y'] )
             
-            pattern_img = blow_up_region( pattern_img, radius, center, c )
+        if effect == 'roll':
+            pattern_img = roll_image(
+                pattern_img,
+                pattern_stretch_factor=config['adjustments']['roll']['pattern_stretch_factor']
+            )
 
-    if row['use_contract_region']:
-        for i in range(int(row['contract_count'])):
-            radius = row['contract_radius'][i]
-            center = row['contract_center'][i]
-            c = row['contract_c'][i]
-            
-            pattern_img = contract_region( pattern_img, radius, center, c )
+        if effect == 'rotation':
+            pattern_img = pattern_img.rotate( row['rotation_degree'], expand=1, fillcolor="black" )
 
-    if row['use_contract_centered']:
-        pattern_img = contract( pattern_img, row['centered_c'] )
-    
-    if row['use_pillow_disortion']:
-        pattern_img = pillow_deform( pattern_img, row['pillow_depth_x'], row['pillow_depth_y'] )
-        
-    if row['use_roll']:
-        pattern_img = roll_image(
-            pattern_img,
-            pattern_stretch_factor=config['adjustments']['roll']['pattern_stretch_factor']
-        )
+        if effect == 'scale':
+            pattern_img = pattern_img.resize((
+                int(pattern_img.size[0] * row['scale']),
+                int(pattern_img.size[1] * row['scale'])
+            ))
 
-    if row['use_rotation']:
-        pattern_img = pattern_img.rotate( row['rotation_degree'], expand=1, fillcolor="black" )
+        if effect == 'stretch':
+            pattern_img = stretch( pattern_img, row['stretch_x'], row['stretch_y'] )
 
-    
-    if row['use_scale']:
-        pattern_img = pattern_img.resize((
-            int(pattern_img.size[0] * row['scale']),
-            int(pattern_img.size[1] * row['scale'])
-        ))
+        if effect == 'trapezoidal_distortion':
+            pattern_img = distort_trapezoidal(
+                pattern_img,
+                (
+                    row['trapezoidal_distortion_strength_1'],
+                    row['trapezoidal_distortion_strength_2']
+                ),
+                row['trapezoidal_distortion_direction']
+            )
 
-    if row['use_stretch']:
-        pattern_img = stretch( pattern_img, row['stretch_x'], row['stretch_y'] )
+        if effect == 'uniform_trapezoidal_distortion':
+            pattern_img = distort_trapezoidal_uniform(
+                pattern_img,
+                row['trapezoidal_distortion_strength'],
+                row['trapezoidal_distortion_direction']
+            )
 
-
-    if row['use_trapezoidal_distortion']:
-        pattern_img = distort_trapezoidal(
-            pattern_img,
-            (
-                row['trapezoidal_distortion_strength_1'],
-                row['trapezoidal_distortion_strength_2']
-            ),
-            row['trapezoidal_distortion_direction']
-        )
-
-    if row['use_uniform_trapezoidal_distortion']:
-        pattern_img = distort_trapezoidal_uniform(
-            pattern_img,
-            row['trapezoidal_distortion_strength'],
-            row['trapezoidal_distortion_direction']
-        )
-
-    if row['use_wave_deform']:
-        pattern_img = wave_deform(
-            pattern_img,
-            row['wave_length'],
-            row['wave_depth']
-        )
+        if effect == 'wave_deform':
+            pattern_img = wave_deform(
+                pattern_img,
+                row['wave_length'],
+                row['wave_depth']
+            )
     
     return pattern_img

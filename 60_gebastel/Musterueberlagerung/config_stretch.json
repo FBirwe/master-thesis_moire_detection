@@ -1,0 +1,121 @@
+{
+    "available_patterns" : [
+        "pattern_060",
+        "lines_150lpi_8",
+        "pattern_010",
+        "lines_150lpi_6",
+        "lines_150lpi_7",
+        "lines_150lpi_5",
+        "lines_150lpi_4",
+        "pattern_020",
+        "pattern_030",
+        "lines_150lpi_0",
+        "pattern_line_040",
+        "lines_150lpi_1",
+        "lines_150lpi_3",
+        "pattern_line_080",
+        "lines_150lpi_2",
+        "pattern_040",
+        "diamons_150lpi_straight_0",
+        "diamons_150lpi_straight_1",
+        "diamons_150lpi_straight_3",
+        "pattern_050",
+        "diamons_150lpi_straight_2"
+    ],
+    "overlay_intensity" : [0,0,0,1],
+    "processing_dpi" : 600,
+    "masks_per_generated_image" : 10,
+    "max_tile_ssim" : 0.95,
+    "pattern_mask" : {
+        "increase_contrast_factor" : 1.2,
+        "thumb_sizes" : [20,15,10,8,5],
+        "mask_decrease_factor" : 0.78,
+        "per_size_blur_radius_factor" : 0.03,
+        "composite_blur_radius_factor" : 0.03
+    },
+    "soft_light" : {
+        "sigmoid_stretch_factor" : 20
+    },
+    "overlay_weight" : 0.7,
+    "equal_brightness" : {
+        "difference_threshold" : 0.01
+    },
+    "adjustments" : {
+        "scale" : {
+            "weight" : 0.5,
+            "max_size" : 1.5
+        },
+        "rotation" : {
+            "weight" : 1,
+            "base_degree" : 45,
+            "degree_span" : 0
+        },
+        "pillow_disortion" : {
+            "weight" : 0,
+            "max_depth" : 0.5
+        },
+        "blow_up_centered" : {
+            "weight" : 0.25,
+            "c" : 10,
+            "excludes" : ["contract_centered"]
+        },
+        "blow_up_region" : {
+            "weight" : 0.25,
+            "min_count" : 3,
+            "max_count" : 8,
+            "min_radius" : 30,
+            "max_radius" : 150,
+            "c" : 0.6
+        },
+        "contract_centered" : {
+            "weight" : 0.25,
+            "c" : 10,
+            "excludes" : ["blow_up_centered"]
+        },
+        "contract_region" : {
+            "weight" : 0.25,
+            "min_count" : 3,
+            "max_count" : 8,
+            "min_radius" : 30,
+            "max_radius" : 150,
+            "c" : 0.6
+        },
+        "stretch" : {
+            "weight" : 1,
+            "min_stretch_x" : 1,
+            "max_stretch_x" : 1.5,
+            "min_stretch_y" : 1,
+            "max_stretch_y" : 1
+        },
+        "trapezoidal_distortion" : {
+            "weight" : 0,
+            "chance_directions" : [0.25, 0.25, 0.25, 0.25],
+            "min_strength_1" : 0.25,
+            "max_strength_1" : 0.5,
+            "min_strength_2" : 0.25,
+            "max_strength_2" : 0.5,
+            "excludes" : ["uniform_trapezoidal_distortion"]
+        },
+        "uniform_trapezoidal_distortion" : {
+            "weight" : 0,
+            "chance_directions" : [0.25, 0.25, 0.25, 0.25],
+            "min_strength" : 0,
+            "max_strength" : 0.25,
+            "excludes" : ["trapezoidal_distortion"]
+        },
+        "roll" : {
+            "weight" : 0,
+            "pattern_stretch_factor" : 1
+        },
+        "wave_deform" : {
+            "weight" : 0.5,
+            "min_wave_length" : 120,
+            "max_wave_length" : 240,
+            "min_wave_depth" : 20,
+            "max_wave_depth" : 35
+        }
+    },
+    "jobs_to_ignore" : [
+        "23-10-03_Testformen","613010","613845","23-10-17_blur","23-10-18_farbe","23-10-19_farbe","23-10-23_glattesRaster"
+    ]
+}

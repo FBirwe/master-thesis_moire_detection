@@ -13,12 +13,14 @@ def get_moire_path( row, dotenv ):
 
 
 def get_non_moire_path( row, dotenv ):
-    non_moire_path = row.img_path.parent.parent / 'vps2400dpi150lpi'/ (row.image + '_300.jpg')
+    return dotenv['DATA_DIR'] / row.job / 'ps2400dpi150lpi'/ (row.pdf_filename + '.4c_300.jpg')
 
-    if non_moire_path.exists() == False:
-        non_moire_path = row.img_path.parent.parent / 'vps2400dpi175lpi'/ (row.image + '_300.jpg')
+    # non_moire_path = row.img_path.parent.parent / 'vps2400dpi150lpi'/ (row.image + '_300.jpg')
 
-    return non_moire_path
+    # if non_moire_path.exists() == False:
+    #     non_moire_path = row.img_path.parent.parent / 'vps2400dpi175lpi'/ (row.image + '_300.jpg')
+
+    # return non_moire_path
 
 
 def get_img_pair( row, img_size, dotenv ):
