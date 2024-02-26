@@ -158,3 +158,5 @@ cython_debug/
 60_gebastel/Musterueberlagerung/10_out/
 60_gebastel/Musterueberlagerung/11_pattern_images/
 60_gebastel/Model/dataset/*
+60_gebastel/Model/temp
+60_gebastel/Model/result_images
