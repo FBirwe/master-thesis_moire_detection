@@ -2,32 +2,43 @@ import sqlite3
 from helper import load_dotenv, get_relevant_data_dirs
 from get_labelstudio_data import get_moires_of_project 
 import re
-from collections import Counter
-import json
 from datetime import datetime
+from file_interaction import get_data_files
 
 
-def add_unknown_pdfs( data_dirs, con ):
+def add_unknown_pdfs( all_files, con ):
     # alle pdf-files queuen
     pdf_files = []
-    for ddir in data_dirs:
-        pdf_files += list( ddir.glob('./pdf/*.pdf'))
-
+    for filepath,storage_type in all_files:
+        parts = str(filepath).split('/')
+        parent_dir = parts[-2]
+        filename = parts[-1]
+        suffix = filename.split('.')[-1].lower()
+    
+        if parent_dir == 'pdf' and suffix == 'pdf':
+            pdf_files.append((filepath, storage_type))
+            
     # pdf_files aus db laden
     c = con.cursor()
     c.execute("SELECT filename,job FROM pdf_page")
-
+    
     db_data = c.fetchall()
     c.close()
 
     # unbekannte pdfs filtern
     unknown_pdfs = []
-    for pdf in pdf_files:
+    for pdf,storage_type in pdf_files:
+        parts = str(pdf).split('/')
+        job_name = parts[-3]
+        filename = parts[-1]
+        filename = re.sub(r'\.pdf$','', filename)
+        filename = re.sub(r'\.PDF$','', filename)
+    
         file_entry = (
-            pdf.name.replace(pdf.suffix,''),
-            pdf.parent.parent.name
+            filename,
+            job_name
         )
-
+        
         if file_entry not in db_data:
             unknown_pdfs.append(file_entry)
 
@@ -70,17 +81,55 @@ def add_variants( variants, con ):
     c.close()
     con.commit()
 
+def add_related_file( job, pdf_filename, variant_name, type_name, filename ):
+    config = load_dotenv()
+    con = sqlite3.connect( config['DB_PATH'] )
 
-def add_related_files( data_dirs, con ):
+    try:
+        c = con.cursor()
+        c.execute(
+            f'''
+                INSERT INTO related_file (job,pdf_filename,variant_name,type,filename)
+                VALUES ('{ job }','{ pdf_filename }','{ variant_name }','{ type_name }','{ filename }')
+            '''
+        )
+        c.close()
+        con.commit()
+    except:
+        pass
+
+    con.close()
+
+
+def add_related_files( all_files, con ):
     related_files = []
-    for ddir in data_dirs:
-        for sd in ddir.iterdir():
-            if sd.is_dir() and sd.name != 'pdf':
-                related_files += [f for f in sd.iterdir() if f.name != '.DS_Store']
+    error_paths = []
+    
+    for filepath,storage_type in all_files:
+        filepath = str(filepath)
+        filepath = filepath[filepath.index('data'):]
+    
+        try:
+            parts = str(filepath).split('/')
+            job = parts[1]
+            variant_name = parts[2]
+            filename = parts[3]
+        
+            if variant_name != 'pdf' and filename != '.DS_Store':
+                related_files.append({
+                    'job' : job,
+                    'variant_name' : variant_name,
+                    'filename' : filename,
+                    'filepath' : filepath,
+                    'storage_type' : storage_type
+                })
+        except:
+            error_paths.append(filepath)
 
-    # Varianten herausfiltern
-    variants = list(set([f.parent.name for f in related_files]))
+    # Varianten hinzufügen
+    variants = list(set([rf['variant_name'] for rf in related_files]))
     add_variants( variants, con )
+
 
     # related_file tabelle laden
     c = con.cursor()
@@ -91,23 +140,38 @@ def add_related_files( data_dirs, con ):
     available_data = c.fetchall()
     c.close()
 
-    # related files hinzufügen
+    # duplikate herausfiltern
     data_to_add = []
-
+    c = con.cursor()
+    
     for rf in related_files:
-        res = re.match(r'(.+)\.(.+?)$', rf.name.replace(rf.suffix,''))
-
+        res = re.match(r'(.+)\.(.+?)\.(.+?)$', rf['filename'])
+    
         if res:
             file_entry = (
-                rf.parent.name,
+                rf['variant_name'],
                 res.groups()[0],
-                rf.parent.parent.name,
+                rf['job'],
                 res.groups()[1],
-                rf.name
+                rf['filename']
             )
-
-            if file_entry not in available_data:
+    
+            c.execute(f'''
+                SELECT 1 FROM related_file
+                WHERE
+                    variant_name='{ file_entry[0] }' AND
+                    pdf_filename='{ file_entry[1] }' AND
+                    job='{ file_entry[2] }' AND
+                    "type"='{ file_entry[3] }' AND
+                    filename='{ file_entry[4] }'
+            ''')
+            
+            entry_in_db = res is not c.fetchone()
+            
+            if entry_in_db == False:
                 data_to_add.append(file_entry)
+    
+    c.close()
 
     value_lines = [
         f'("{ fe[0] }","{ fe[1] }","{ fe[2] }","{ fe[3] }","{ fe[4] }")'
@@ -180,16 +244,18 @@ def add_moires( project_id, ls_token, con ):
 
 def main():
     config = load_dotenv()
-    data_dirs = get_relevant_data_dirs()
+    all_files = get_data_files()
+    all_files = [af for af in all_files if '.DS_Store' not in str(af[0])]
+
     con = sqlite3.connect( config['DB_PATH'] )
 
-    add_unknown_pdfs( data_dirs, con )
-    add_related_files( data_dirs, con )
-    add_moires(
-        config['LABEL_STUDIO_PROJECT_ID'],
-        config['LABEL_STUDIO_TOKEN'],
-        con
-    )
+    add_unknown_pdfs( all_files, con )
+    add_related_files( all_files, con )
+    # add_moires(
+    #     config['LABEL_STUDIO_PROJECT_ID'],
+    #     config['LABEL_STUDIO_TOKEN'],
+    #     con
+    # )
 
 
 if __name__ == '__main__':

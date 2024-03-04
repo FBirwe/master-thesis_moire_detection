@@ -6,6 +6,7 @@ from dotenv import dotenv_values
 import sys
 sys.path.append('../../30_data_tools/')
 from helper import load_dotenv
+from file_interaction import upload_buffer
 import cv2
 import pickle
 
@@ -74,9 +75,10 @@ def save_masks( masks, mask_path ):
                 fy=config['MASK_IMG_SCALE_FACTOR']
             ).astype('bool')
 
-    with mask_path.open('wb') as pkl_file:
-        pickle.dump(masks, pkl_file)
-
+    upload_buffer(
+        pickle.dumps(masks),
+        mask_path
+    )
 
 
 def get_text_boxes( img, min_conf=50 ):

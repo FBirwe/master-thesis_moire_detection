@@ -2,10 +2,32 @@ import shutil
 from tqdm import tqdm
 from dotenv import dotenv_values
 from pathlib import Path
+import pandas as pd
 import json
 import re
 import sqlite3
 import os
+
+
+def get_pdf_page_processing_status( variant_name, type_name ):
+    config = load_dotenv()
+    con = sqlite3.connect( config['DB_PATH'] )
+
+    data_overview = pd.read_sql(
+        f'''
+            SELECT pp.*, IFNULL(rf.file_available, 0) file_available FROM pdf_page pp 
+            LEFT JOIN (
+            	SELECT *, 1 AS file_available FROM related_file rf 
+            	WHERE rf.variant_name='{ variant_name }' AND "type" = '{ type_name }'
+            ) rf
+            ON pp.filename = rf.pdf_filename AND pp.job = rf.job
+        ''',
+        con
+    )
+    data_overview.loc[:,'file_available'] = data_overview.loc[:,'file_available'] == 1
+    con.close()
+
+    return data_overview
 
 
 def load_moires_from_json( con ):
@@ -87,21 +109,23 @@ def move_all_files( from_dir, to_dir, extensions=[] ):
 def load_dotenv():
     script_file_path = Path(  __file__ ).parent
     config = dict(dotenv_values( Path(__file__).parent / ".env" ))
-    config['DATA_DIR'] = (script_file_path / config['DATA_DIR']).resolve()
+    config['DATA_DIRS'] = [(script_file_path / data_path).resolve() for data_path in config['DATA_DIRS'].split(';')]
+    config['TEMP_PROCESSING_DIR'] = Path(config['TEMP_PROCESSING_DIR'])
     config['GENERIC_DATA_DIR'] = (script_file_path / config['GENERIC_DATA_DIR']).resolve()
-    config['GENERIC_GENERATED_DATA_DIR'] = config['GENERIC_DATA_DIR'] / '01_generated_data'
-    config['GENERIC_INFORMATION_DATA_DIR'] = config['GENERIC_DATA_DIR'] / '02_information_data'
-    config['GENERIC_LABELSTUDIO_DATA_DIR'] = config['DATA_DIR'] / '11_labelstudio_generic_data'
+    # config['GENERIC_GENERATED_DATA_DIR'] = config['GENERIC_DATA_DIR'] / '01_generated_data'
+    # config['GENERIC_INFORMATION_DATA_DIR'] = config['GENERIC_DATA_DIR'] / '02_information_data'
+    # config['GENERIC_LABELSTUDIO_DATA_DIR'] = config['DATA_DIR'] / '11_labelstudio_generic_data'
     config['MODEL_DIR'] = (script_file_path / config['MODEL_DIR']).resolve()
     config['PATTERN_DIR'] = (script_file_path / config['PATTERN_DIR']).resolve()
-    config['SORT_DIR'] = config['DATA_DIR'] / config['SORT_DIR']
+    # config['SORT_DIR'] = config['DATA_DIR'] / config['SORT_DIR']
     config['DB_PATH'] = script_file_path / config['DB_PATH']
     config['LABELING_JSON_PATH'] = Path( config['LABELING_JSON_PATH'] )
     config['LOFI_DPI'] = int(config['LOFI_DPI'])
     config['LOFI_SCREEN_DPI'] = int(config['LOFI_SCREEN_DPI'])
     config['TRAIN_DATA_DPI'] = int(config['TRAIN_DATA_DPI'])
-    config['LABEL_STUDIO_DIR'] = config['DATA_DIR'] / config['LABEL_STUDIO_DIR']
+    # config['LABEL_STUDIO_DIR'] = config['DATA_DIR'] / config['LABEL_STUDIO_DIR']
     config['LABEL_STUDIO_DB_PATH'] = Path( config['LABEL_STUDIO_DB_PATH'] )
+    config['AZURE_CONNECTION_STRING'] = f'DefaultEndpointsProtocol=https;AccountName={ config["AZURE_ACCOUNT_NAME"] };AccountKey={ config["AZURE_ACCOUNT_KEY"] };EndpointSuffix=core.windows.net'
     os.environ['TESSDATA_PREFIX'] = str(Path( config['TESSDATA_PREFIX'] ).resolve())
 
     return config

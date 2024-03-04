@@ -12,12 +12,20 @@ def get_tasks( project_id ):
 
     c = con.cursor()
     c.execute(f'''
-        SELECT t.id, t.project_id, t.total_annotations, isl.key FROM task t 
-        JOIN io_storages_localfilesimportstoragelink isl
+        SELECT t.id, t.project_id, t.total_annotations, isl.key  FROM task t 
+        LEFT JOIN io_storages_localfilesimportstoragelink isl
         ON t.id = isl.task_id
-        WHERE t.project_id = { project_id }
+        WHERE isl."key" IS NOT NULL AND t.project_id = { project_id }
     ''')
-    tasks = c.fetchall()
+    tasks_local = c.fetchall()
+
+    c.execute(f'''
+        SELECT t.id, t.project_id, t.total_annotations, isl.key  FROM task t 
+        LEFT JOIN io_storages_azureblobimportstoragelink isl
+        ON t.id = isl.task_id
+        WHERE isl."key" IS NOT NULL AND t.project_id = { project_id }
+    ''')
+    tasks_azure = c.fetchall()
     c.close()
     con.close()
 
@@ -26,9 +34,19 @@ def get_tasks( project_id ):
             "id" : t[0],
             "project_id" : t[1],
             "total_annotations" : t[2],
+            "storage_type" : 'local',
             "data_path" : t[3]
-        } for t in tasks
+        } for t in tasks_local
+    ] + [
+        {
+            "id" : t[0],
+            "project_id" : t[1],
+            "total_annotations" : t[2],
+            "storage_type" : 'azure',
+            "data_path" : t[3]
+        } for t in tasks_azure
     ]
+
 
     return tasks
 
@@ -70,7 +88,10 @@ def get_results_of_project( project_id, labels=[] ):
     tasks_by_id = {}
     
     for t in tasks:
-        tasks_by_id[t['id']] = Path(t['data_path']).name
+        tasks_by_id[t['id']] = {
+            'data_path' : Path(t['data_path']).name,
+            'storage_type' : t['storage_type']
+        }
 
     # results
     c = con.cursor()
@@ -91,29 +112,46 @@ def get_results_of_project( project_id, labels=[] ):
 
         for res in res_task:
             res['task_id'] = task_id
-            res['img_name'] = tasks_by_id[task_id]
+            res['img_name'] = tasks_by_id[task_id]['data_path']
+            res['storage_type'] = tasks_by_id[task_id]['storage_type']
 
-            res['rectanglelabels'] = []
+            res['labels'] = []
             if 'rectanglelabels' in res['value']:
-                res['rectanglelabels'] = res['value']['rectanglelabels']
+                res['labels'] += res['value']['rectanglelabels']
+
+            if 'polygonlabels' in res['value']:
+                res['labels'] += res['value']['polygonlabels']
 
             # Moireposition auf Pixelwerte umbauen
-            res['value'] = {
-                'x' : round(res["original_width"] * (res['value']['x'] / 100)),
-                'y' : round(res["original_height"] * (res['value']['y'] / 100)),
-                'width' : round(res["original_width"] * (res['value']['width'] / 100)),
-                'height' : round(res["original_height"] * (res['value']['height'] / 100))
-            }
+            if res['type'] == 'rectanglelabels':
+                res['bbox'] = {
+                    'x' : round(res["original_width"] * (res['value']['x'] / 100)),
+                    'y' : round(res["original_height"] * (res['value']['y'] / 100)),
+                    'width' : round(res["original_width"] * (res['value']['width'] / 100)),
+                    'height' : round(res["original_height"] * (res['value']['height'] / 100))
+                }
+            elif res['type'] == 'polygonlabels':
+                res['points'] = [
+                    (round(res["original_width"] * (pt[0] / 100)),round(res["original_height"] * (pt[1] / 100)))
+                    for pt in res['value']['points']
+                ]
+
+                res['bbox'] = {}
+                res['bbox']['x'] = min([pt[0] for pt in res['points']])
+                res['bbox']['y'] = min([pt[1] for pt in res['points']])
+                res['bbox']['width'] = max([pt[0] for pt in res['points']]) - res['bbox']['x']
+                res['bbox']['height'] = max([pt[1] for pt in res['points']]) - res['bbox']['y']
 
             results.append(res)
 
+    # filtert die Ergebnisse anhand des Parameters "labels"
     if len(labels) == 0:
         return results
     
     results_out = []
 
     for r in results:
-        for l in r['rectanglelabels']:
+        for l in r['labels']:
             if l in labels:
                 results_out.append(r)
                 break

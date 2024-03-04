@@ -1,50 +1,79 @@
 from tqdm import tqdm
 import sys
 sys.path.append('../../30_data_tools')
-from helper import load_dotenv
+from helper import load_dotenv, get_pdf_page_processing_status
+from file_interaction import get_related_filepath, upload_file, download_blob
+from add_data_to_db import add_related_file
 from render_screen_images import generate_screen
 from random import shuffle
+from pathlib import Path
+import pandas as pd
 
 
-def get_images_to_process( config ):
-    halftone_images = list(config['DATA_DIR'].glob('./*/halftone600dpi/*.4c.jpg'))
+def process_separations( separation_to_process ):
+    config = load_dotenv()
+    variant_name = 'ps2400dpi150lpi'
+    data = get_pdf_page_processing_status( variant_name, separation_to_process )
+    data_to_update = data.loc[data.file_available == False]
+    temp_files = []
 
-    images_to_process = []
-    for img_path in halftone_images:
 
-        separations_exist = [
-            (img_path.parent.parent / 'ps2400dpi150lpi' / img_path.name.replace( '.4c.jpg', f'.{ sep }.tif' )).exists()
-            for sep in ['C','M','Y','K']
-        ]
+    for i in tqdm(range(data_to_update.shape[0])):
+        row = data_to_update.iloc[i]
+        jpg_file_name = f'{row.filename}.4c.jpg'
+        res = get_related_filepath( row.job, f'halftone{ config["LOFI_DPI"] }dpi', jpg_file_name )
 
-        if False in separations_exist:
-            images_to_process.append( img_path )
+        if res:
+            img_path, storage_type = res
 
-    shuffle(images_to_process)
-    return images_to_process
+
+            if storage_type == 'local':
+                img_path = Path( img_path )
+            else:
+                temp_img_path = config['TEMP_PROCESSING_DIR'] / jpg_file_name
+                with temp_img_path.open('wb') as f:
+                    f.write(download_blob( img_path ).getbuffer())
+
+                temp_files.append(temp_img_path)
+                img_path = temp_img_path
+
+
+            cyan_path = config['TEMP_PROCESSING_DIR'] / f'{row.filename}.C.tif'
+            magenta_path = config['TEMP_PROCESSING_DIR'] / f'{row.filename}.M.tif'
+            yellow_path = config['TEMP_PROCESSING_DIR'] / f'{row.filename}.Y.tif'
+            black_path = config['TEMP_PROCESSING_DIR'] / f'{row.filename}.K.tif'
+            temp_files += [cyan_path, magenta_path, yellow_path, black_path]
+            blob_prefix_path = f'data/{ row.job }/{ variant_name }/'
+
+
+            generate_screen(
+                img_path.resolve(),
+                cyan_path.resolve(),
+                magenta_path.resolve(),
+                yellow_path.resolve(),
+                black_path.resolve()
+            )
+
+            # upload nach azure
+            upload_file( cyan_path, blob_prefix_path )
+            upload_file( magenta_path, blob_prefix_path )
+            upload_file( yellow_path, blob_prefix_path )
+            upload_file( black_path, blob_prefix_path )
+
+            # Datei in DB einfügen
+            add_related_file( row.job, row.filename, variant_name, 'C', cyan_path.name )
+            add_related_file( row.job, row.filename, variant_name, 'M', magenta_path.name )
+            add_related_file( row.job, row.filename, variant_name, 'Y', yellow_path.name )
+            add_related_file( row.job, row.filename, variant_name, 'K', black_path.name )
+
+    # temp Ordner aufräumen
+    for f in temp_files:
+        f.unlink()
 
 
 def main():
-    config = load_dotenv()
-
-    for img_path in tqdm(get_images_to_process( config )):
-        out_dir = img_path.parent.parent / 'ps2400dpi150lpi'
-
-        if out_dir.exists() == False:
-            out_dir.mkdir()
-
-        cyan_path = out_dir / img_path.name.replace( '.4c' + img_path.suffix, '.C.tif' )
-        magenta_path = out_dir / img_path.name.replace( '.4c' + img_path.suffix, '.M.tif' )
-        yellow_path = out_dir / img_path.name.replace( '.4c' + img_path.suffix, '.Y.tif' )
-        black_path = out_dir / img_path.name.replace( '.4c' + img_path.suffix, '.K.tif' )
-
-        generate_screen(
-            img_path.resolve(),
-            cyan_path.resolve(),
-            magenta_path.resolve(),
-            yellow_path.resolve(),
-            black_path.resolve()
-        )
+    for sep in ['C','M','Y','K']:
+        process_separations( sep )
 
  
 if __name__ == "__main__":
