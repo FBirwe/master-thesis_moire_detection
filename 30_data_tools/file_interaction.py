@@ -1,6 +1,7 @@
 from azure.storage.blob import BlobClient, ContainerClient, BlobServiceClient
 import io
-from helper import load_dotenv
+from helper import load_dotenv, get_pdf_page_processing_status
+from datetime import datetime
 
 dotenv = load_dotenv()
 
@@ -57,13 +58,28 @@ def upload_buffer( buffer, blob_path ):
         connection_timeout=600
     )
 
-
 def download_blob( blob_name ):
     blob = BlobClient.from_connection_string(conn_str=dotenv['AZURE_CONNECTION_STRING'], container_name=dotenv['AZURE_CONTAINER_NAME'], blob_name=blob_name)
     stream = io.BytesIO()
 
     blob.download_blob().readinto(stream)
     return stream
+
+
+def upload_batch( data, task_type ):
+    stream = io.BytesIO()
+    data.to_pickle( stream )
+
+    upload_buffer( stream.getbuffer(), f'batches/{ task_type }.{ round(datetime.now().timestamp()) }.pkl' )
+
+
+def get_batch_files( batch_type=None ):
+    blobs = get_blobs( filter='batches/' )
+
+    if batch_type is not None:
+        blobs = [b for b in blobs if b.split('/')[-1].startswith(batch_type)]
+
+    return blobs
 
 
 def get_blobs( filter=None ):
@@ -88,5 +104,11 @@ def get_data_files():
 
 
 if __name__ == '__main__':
-    print( get_data_files() )
-    # print( get_related_filepath( '148903', 'ps2400dpi150lpi', '133.4c_600.jpg' ) )
+    # data = get_pdf_page_processing_status( 'halftone600dpi', 'masks' )
+    # data_to_update = data.loc[data.file_available == False].iloc[:25]
+
+    # upload_batch(
+    #     data_to_update,
+    #     'masks'
+    # )
+    print( get_batch_files( batch_type='masks' ) )

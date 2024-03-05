@@ -6,11 +6,11 @@ from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 from PIL import Image
 import numpy as np
 import pandas as pd
-import sqlite3
+import pickle
 from time import time
 from mask_functions import get_config, load_mask_img, is_below_max_size, is_above_min_size, is_text_mask, filter_intersected_masks, save_masks
 from helper import load_dotenv, get_pdf_page_processing_status
-from file_interaction import get_related_filepath, download_blob
+from file_interaction import get_related_filepath, download_blob, get_batch_files
 from add_data_to_db import add_related_file
 from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
@@ -122,5 +122,40 @@ def main():
             add_related_file( row.job, row.filename, config["target_variant"], 'masks', f'{ row.filename }.masks.pkl' )
 
 
+def render_masks_from_chunk( entries_to_process_count=None ):
+    dotenv = load_dotenv()
+    config = get_config()
+    config['target_variant'] = 'halftone600dpi'
+    sam = sam_model_registry["vit_h"](checkpoint=dotenv['MODEL_DIR'] / "sam_vit_h_4b8939.pth")
+
+    if torch.cuda.is_available():
+        sam.to(device=torch.cuda.device(0))
+        print( torch.cuda.get_device_name(0) )
+
+    mask_generator = SamAutomaticMaskGenerator(sam)
+
+    batch_files = get_batch_files( batch_type='masks' )
+    missing_masks = pd.concat(
+        [pickle.loads( download_blob(bf).getbuffer() ) for bf in batch_files],
+        ignore_index=True
+    )
+
+    if entries_to_process_count is not None:
+        missing_masks = missing_masks.iloc[:entries_to_process_count]
+
+
+
+    for i in tqdm(range(missing_masks.shape[0])):
+        row = missing_masks.iloc[i]
+
+        masks = render_mask( row, mask_generator, config )
+
+        if masks is not None:
+            mask_path = f'data/{ row.job }/{ config["target_variant"] }/{ row.filename }.masks.pkl'
+            print( mask_path )
+
+            save_masks( masks, mask_path )
+
+
 if __name__ == '__main__':
-    main()
+    render_masks_from_chunk()

@@ -161,3 +161,4 @@ cython_debug/
 60_gebastel/Model/dataset_test
 60_gebastel/Model/temp
 60_gebastel/Model/result_images
+60_gebastel/getRandomPages/00_data_out/*
