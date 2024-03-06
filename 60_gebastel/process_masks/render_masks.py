@@ -94,19 +94,18 @@ def render_mask( row, mask_generator, config ):
         return masks_out
 
 
-def main():
+def render_masks( missing_masks ):
     dotenv = load_dotenv()
     config = get_config()
     config['target_variant'] = 'halftone600dpi'
-
-    all_masks = get_pdf_page_processing_status( config['target_variant'], 'masks' )
-    missing_masks = all_masks.loc[all_masks.file_available == False]
 
     sam = sam_model_registry["vit_h"](checkpoint=dotenv['MODEL_DIR'] / "sam_vit_h_4b8939.pth")
     
     if torch.cuda.is_available():
         sam.to(device=torch.cuda.device(0))
         print( torch.cuda.get_device_name(0) )
+    else:
+        print( "no cuda" )
 
     mask_generator = SamAutomaticMaskGenerator(sam)
 
@@ -119,20 +118,24 @@ def main():
             mask_path = f'data/{ row.job }/{ config["target_variant"] }/{ row.filename }.masks.pkl'
 
             save_masks( masks, mask_path )
-            add_related_file( row.job, row.filename, config["target_variant"], 'masks', f'{ row.filename }.masks.pkl' )
+            try:
+                add_related_file( row.job, row.filename, config["target_variant"], 'masks', f'{ row.filename }.masks.pkl' )
+            except:
+                pass
 
 
-def render_masks_from_chunk( entries_to_process_count=None ):
-    dotenv = load_dotenv()
+def render_missing_masks():
     config = get_config()
     config['target_variant'] = 'halftone600dpi'
-    sam = sam_model_registry["vit_h"](checkpoint=dotenv['MODEL_DIR'] / "sam_vit_h_4b8939.pth")
 
-    if torch.cuda.is_available():
-        sam.to(device=torch.cuda.device(0))
-        print( torch.cuda.get_device_name(0) )
+    all_masks = get_pdf_page_processing_status( config['target_variant'], 'masks' )
+    missing_masks = all_masks.loc[all_masks.file_available == False]
+    render_masks( missing_masks )
 
-    mask_generator = SamAutomaticMaskGenerator(sam)
+
+def render_masks_from_batch( entries_to_process_count=None ):
+    config = get_config()
+    config['target_variant'] = 'halftone600dpi'
 
     batch_files = get_batch_files( batch_type='masks' )
     missing_masks = pd.concat(
@@ -143,19 +146,10 @@ def render_masks_from_chunk( entries_to_process_count=None ):
     if entries_to_process_count is not None:
         missing_masks = missing_masks.iloc[:entries_to_process_count]
 
+    render_masks( missing_masks )
 
-
-    for i in tqdm(range(missing_masks.shape[0])):
-        row = missing_masks.iloc[i]
-
-        masks = render_mask( row, mask_generator, config )
-
-        if masks is not None:
-            mask_path = f'data/{ row.job }/{ config["target_variant"] }/{ row.filename }.masks.pkl'
-            print( mask_path )
-
-            save_masks( masks, mask_path )
 
 
 if __name__ == '__main__':
-    render_masks_from_chunk()
+    # render_missing_masks()
+    render_masks_from_batch()

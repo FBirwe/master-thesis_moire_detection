@@ -104,11 +104,11 @@ def get_data_files():
 
 
 if __name__ == '__main__':
-    # data = get_pdf_page_processing_status( 'halftone600dpi', 'masks' )
-    # data_to_update = data.loc[data.file_available == False].iloc[:25]
+    data = get_pdf_page_processing_status( 'halftone600dpi', 'masks' )
+    data_to_update = data.loc[data.file_available == False].iloc[:25]
 
-    # upload_batch(
-    #     data_to_update,
-    #     'masks'
-    # )
+    upload_batch(
+        data_to_update,
+        'masks'
+    )
     print( get_batch_files( batch_type='masks' ) )
