@@ -123,14 +123,14 @@ def write_masks( data, con ):
     merged.is_already_processed = merged.is_already_processed == 1
 
     sql_lines = [
-        f"('{ row.pdf_filename }','{ row.job }','{ row.type }','{ row.variant_name }','{ row.method }',{ row.idx },'{ row['id'] }','{ row.bbox_string }',{ row.ssim },{ row.overlay_intensity_C },{ row.overlay_intensity_M },{ row.overlay_intensity_Y },{ row.overlay_intensity_K })"
+        f"('{ row.pdf_filename }','{ row.job }','{ row.type }','{ row.variant_name }','{ row.method }',{ row.idx },'{ row['id'] }','{ row.bbox_string }',{ row.ssim },{ row.overlay_intensity_C },{ row.overlay_intensity_M },{ row.overlay_intensity_Y },{ row.overlay_intensity_K },'{ row.pattern }')"
         for _,row in merged.loc[merged.is_already_processed == False].iterrows()
     ]
 
     errors = 0
     if len(sql_lines) > 0:
         SQL = f'''
-            INSERT INTO mask ('pdf_filename','job','type','variant_name','method','idx','mask_id','bbox','ssim','overlay_intensity_C','overlay_intensity_M','overlay_intensity_Y','overlay_intensity_K')
+            INSERT INTO mask ('pdf_filename','job','type','variant_name','method','idx','mask_id','bbox','ssim','overlay_intensity_C','overlay_intensity_M','overlay_intensity_Y','overlay_intensity_K','pattern')
             VALUES { ",".join(sql_lines) }
         '''
         
@@ -141,7 +141,7 @@ def write_masks( data, con ):
             for l in sql_lines:
                 try:
                     SQL = f'''
-                        INSERT INTO mask ('pdf_filename','job','type','variant_name','method','idx','mask_id','bbox','ssim','overlay_intensity_C','overlay_intensity_M','overlay_intensity_Y','overlay_intensity_K')
+                        INSERT INTO mask ('pdf_filename','job','type','variant_name','method','idx','mask_id','bbox','ssim','overlay_intensity_C','overlay_intensity_M','overlay_intensity_Y','overlay_intensity_K','pattern')
                         VALUES { l }
                     '''
                     c.execute(SQL)

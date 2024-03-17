@@ -151,5 +151,5 @@ def render_masks_from_batch( entries_to_process_count=None ):
 
 
 if __name__ == '__main__':
-    # render_missing_masks()
-    render_masks_from_batch()
+    render_missing_masks()
+    # render_masks_from_batch()

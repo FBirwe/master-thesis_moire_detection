@@ -122,29 +122,35 @@ def apply_soft_light( tile_a, tile_b, mask=None, difference_threshold=0.01, sigm
     return out
 
 
-def get_tile_bounding_box( center, pattern_shape, img_shape ):
+def get_tile_bounding_box( mask_bbox, pattern_pos, pattern_shape, img_shape ):
     start = [
-        int(center[0] - pattern_shape[1] / 2),
-        int(center[1] - pattern_shape[0] / 2)
+        mask_bbox[0],
+        mask_bbox[1]
     ]
-
-    if start[0] < 0:
-        start[0] = 0
-
-    if start[1] < 0:
-        start[1] = 0
-
     end = [
-        int(center[0] + pattern_shape[1] / 2),
-        int(center[1] + pattern_shape[0] / 2)
+        mask_bbox[0] + mask_bbox[2],
+        mask_bbox[1] + mask_bbox[3]
     ]
 
+    # Ist das Pattern kleiner als die Maske
+    # wird die Boundingbox entsprechend eingeschränkt
+    if (end[0] - start[0]) > pattern_shape[1]:
+        start[0] = start[0] + pattern_pos[0]
+        end[0] = start[0] + pattern_shape[1]
+
+    
+    if (end[1] - start[1]) > pattern_shape[0]:
+        start[1] = start[1] + pattern_pos[1]
+        end[1] = start[1] + pattern_shape[0]
+
+    # Würde die Bildgröße überschritten,
+    # wird die Bounding-Box verkleinert
     if end[0] > img_shape[1]:
         end[0] = img_shape[1]
 
     if end[1] > img_shape[0]:
-        end[1] = img_shape[0]
-
+        end[1] = img_shape[0]    
+    
     return {
         'x1' : start[0],
         'y1' : start[1],
@@ -195,7 +201,7 @@ def get_pattern_mask( pattern_img, thumb_sizes, mask_decrease_factor, per_size_b
     return out_image
 
 
-def apply_pattern( img, pattern_img, center, config, method='screen', overlay_weight=1, mask=None, log=lambda val: print(val) ):
+def apply_pattern( img, pattern_img, mask, position, config, method='screen', overlay_weight=1, log=lambda val: print(val) ):
     Image.MAX_IMAGE_PIXELS = None
     
     start = time()
@@ -208,40 +214,35 @@ def apply_pattern( img, pattern_img, center, config, method='screen', overlay_we
         config['pattern_mask']['composite_blur_radius_factor'],
         config['pattern_mask']['increase_contrast_factor'],
     )
-
-    # wenn eine maske vorhanden ist, wird das Pattern auf diese begrenzt
-    if mask:
-        start_left = int(pattern_img.shape[1] / 2 - mask['bbox'][2] / 2)
-        start_top = int(pattern_img.shape[0] / 2 - mask['bbox'][3] / 2)
-
-        pattern_mask = pattern_mask.crop((
-            start_left,start_top,
-            start_left+mask['bbox'][2],start_top+mask['bbox'][3]
-        ))
-        
-        pattern_img = pattern_img[
-            start_top:start_top+mask['bbox'][3],
-            start_left:start_left+mask['bbox'][2]
-        ]
-
-    
-    log(f'{ time() - start }: pattern mask berechnet')
+       
     # maskenausschnitt berechnen
     bounding_box = get_tile_bounding_box(
-        center,
+        mask['bbox'],
+        position,
         pattern_img.shape,
         img.shape
     )
-
+    
     log(f'{ time() - start }: bounding box berechnet')
 
-    img_tile = img[
-        bounding_box['y1']:bounding_box['y2'],
-        bounding_box['x1']:bounding_box['x2']
-    ]
+    # Ist das Pattern größer als die Maske wird das Pattern auf die entsprechende Größe angepasst
+    # Wenn das Pattern kleiner ist, wird die Größe der Bounding Box entsprechend angepasst
+    if position[0] < 0:
+        start_left = position[0] * -1
+        pattern_img = pattern_img[
+            :,
+            start_left:start_left + bounding_box['width']
+        ]
+        pattern_mask = pattern_mask.crop((
+            start_left,
+            0,
+            start_left + bounding_box['width'],
+            pattern_mask.size[1]
+        ))
+    
+    if position[1] < 0:
+        start_top = position[1] * -1
 
-    if pattern_img.shape[0] > bounding_box['height']:
-        start_top = int(round(pattern_img.shape[0] / 2 - bounding_box['height'] / 2))
         pattern_img = pattern_img[
             start_top:start_top + bounding_box['height'],
             :
@@ -253,18 +254,12 @@ def apply_pattern( img, pattern_img, center, config, method='screen', overlay_we
             start_top + bounding_box['height']
         ))
 
-    if pattern_img.shape[1] > bounding_box['width']:
-        start_left = int(round(pattern_img.shape[1] / 2 - bounding_box['width'] / 2))
-        pattern_img = pattern_img[
-            :,
-            start_left:start_left + bounding_box['width']
-        ]
-        pattern_mask = pattern_mask.crop((
-            start_left,
-            0,
-            start_left + bounding_box['width'],
-            pattern_mask.size[1]
-        ))
+
+    # Verarbeitung der Seite
+    img_tile = img[
+        bounding_box['y1']:bounding_box['y2'],
+        bounding_box['x1']:bounding_box['x2']
+    ]
 
     log(f'{ time() - start }: tiles berechnet')
 

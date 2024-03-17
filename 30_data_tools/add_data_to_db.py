@@ -61,6 +61,8 @@ def add_unknown_pdfs( all_files, con ):
         c.close()
         con.commit()
 
+    print(f"successfully added { len(value_lines) } pdfs")
+
 
 def add_variants( variants, con ):
     c = con.cursor()
@@ -83,111 +85,78 @@ def add_variants( variants, con ):
 
 def add_related_file( job, pdf_filename, variant_name, type_name, filename ):
     config = load_dotenv()
-    con = sqlite3.connect( config['DB_PATH'] )
 
-    try:
-        c = con.cursor()
-        c.execute(
-            f'''
+    with sqlite3.connect( config['DB_PATH'] ) as con:
+        try:
+            c = con.cursor()
+            sql_string = f'''
                 INSERT INTO related_file (job,pdf_filename,variant_name,type,filename)
                 VALUES ('{ job }','{ pdf_filename }','{ variant_name }','{ type_name }','{ filename }')
             '''
-        )
-        c.close()
-        con.commit()
-    except:
-        pass
-
-    con.close()
+            c.execute( sql_string )
+            c.close()
+            con.commit()
+        except:
+            pass
 
 
 def add_related_files( all_files, con ):
     related_files = []
     error_paths = []
+    added_related_files = []
     
     for filepath,storage_type in all_files:
         filepath = str(filepath)
         filepath = filepath[filepath.index('data'):]
-    
+           
         try:
             parts = str(filepath).split('/')
             job = parts[1]
             variant_name = parts[2]
             filename = parts[3]
-        
-            if variant_name != 'pdf' and filename != '.DS_Store':
+            res = re.match(r'(.+)\.(.+?)\.(.+?)$', filename)
+            
+            if res and variant_name != 'pdf' and filename != '.DS_Store':               
                 related_files.append({
                     'job' : job,
                     'variant_name' : variant_name,
                     'filename' : filename,
                     'filepath' : filepath,
-                    'storage_type' : storage_type
+                    'storage_type' : storage_type,
+                    'pdf_filename' : res.groups()[0],
+                    'type_name' : res.groups()[1]
                 })
         except:
             error_paths.append(filepath)
-
+    
     # Varianten hinzufügen
     variants = list(set([rf['variant_name'] for rf in related_files]))
     add_variants( variants, con )
 
-
-    # related_file tabelle laden
-    c = con.cursor()
-    c.execute('''
-        SELECT variant_name,pdf_filename,job,type,filename
-        FROM related_file
-    ''')
-    available_data = c.fetchall()
-    c.close()
-
     # duplikate herausfiltern
-    data_to_add = []
     c = con.cursor()
-    
-    for rf in related_files:
-        res = re.match(r'(.+)\.(.+?)\.(.+?)$', rf['filename'])
-    
+    for rf in related_files:        
         if res:
-            file_entry = (
-                rf['variant_name'],
-                res.groups()[0],
-                rf['job'],
-                res.groups()[1],
-                rf['filename']
-            )
-    
-            c.execute(f'''
-                SELECT 1 FROM related_file
+            sql_string = f'''
+                SELECT 1 AS status FROM related_file
                 WHERE
-                    variant_name='{ file_entry[0] }' AND
-                    pdf_filename='{ file_entry[1] }' AND
-                    job='{ file_entry[2] }' AND
-                    "type"='{ file_entry[3] }' AND
-                    filename='{ file_entry[4] }'
-            ''')
-            
-            entry_in_db = res is not c.fetchone()
-            
-            if entry_in_db == False:
-                data_to_add.append(file_entry)
+                    variant_name='{ rf["variant_name"] }' AND
+                    pdf_filename='{ rf["pdf_filename"] }' AND
+                    job='{ rf["job"] }' AND
+                    "type"='{ rf["type_name"] }'
+            '''
+            c.execute(sql_string)
+
+            result = c.fetchone()
+            entry_in_db = result is not None
+                        
+            if entry_in_db == False:     
+                add_related_file( rf["job"], rf["pdf_filename"], rf["variant_name"], rf["type_name"], rf["filename"] )
+                added_related_files.append( (rf["job"], rf["pdf_filename"], rf["pdf_filename"], rf["type_name"], rf["filename"]) )
     
     c.close()
-
-    value_lines = [
-        f'("{ fe[0] }","{ fe[1] }","{ fe[2] }","{ fe[3] }","{ fe[4] }")'
-        for fe in data_to_add
-    ]
-
-    if len(value_lines) > 0:
-        c = con.cursor()
-        c.execute(
-            f'''
-                INSERT INTO related_file (variant_name,pdf_filename,job,type,filename)
-                VALUES { ",".join(value_lines) }
-            '''
-        )
-        c.close()
-        con.commit()
+    
+    print(f"successfully added { len(added_related_files) } related files")
 
 
 def add_moires( project_id, ls_token, con ):

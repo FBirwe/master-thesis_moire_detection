@@ -2,6 +2,8 @@ from azure.storage.blob import BlobClient, ContainerClient, BlobServiceClient
 import io
 from helper import load_dotenv, get_pdf_page_processing_status
 from datetime import datetime
+from PIL import Image
+
 
 dotenv = load_dotenv()
 
@@ -21,8 +23,23 @@ def get_related_filepath( job, variant_name, filename ):
         return (blob_path, 'azure')
 
 
+def get_generic_image_filepath( pdf_filename, job, method, idx, variant=None ):
+    # file liegt in azure
+    if variant is None:
+        # bei None wird das Halbtonbild gesucht
+        filename = f"{ job }.{ pdf_filename }.halftone{ dotenv['LOFI_DPI'] }dpi.{ method }.{ idx }.jpg"
+    else:
+        # andernfalls eine Variante
+        filename = f"{ job }.{ pdf_filename }.halftone{ dotenv['LOFI_DPI'] }dpi.{ method }.{ idx }.{ variant }"
+ 
+    blob_path = f'generic_data/{ filename }'
+
+    if blob_exists( blob_path ):
+        return (get_blobs( filter=blob_path )[0], 'azure')
+
+
 def blob_exists( blob_path ):
-    return len( get_blobs( blob_path ) ) > 0
+    return len( get_blobs( filter=blob_path ) ) > 0
 
 
 def copy_blob( source_file_path, target_file_path ):
@@ -102,13 +119,28 @@ def get_data_files():
     return azure_files + local_files
 
 
+def open_img( img_file_path ):
+    if img_file_path is None:
+        Exception('image not available')
+
+    img_path, storage_type = img_file_path
+
+    if storage_type == 'azure':
+        img = Image.open( download_blob(img_path) )
+    else:
+        img = Image.open( img_path )
+
+    return img
+
 
 if __name__ == '__main__':
     data = get_pdf_page_processing_status( 'halftone600dpi', 'masks' )
-    data_to_update = data.loc[data.file_available == False].iloc[:25]
+    data_to_update = data.loc[data.file_available == False]
 
     upload_batch(
         data_to_update,
         'masks'
     )
     print( get_batch_files( batch_type='masks' ) )
+
+    print( data.loc[data.file_available == False].shape[0] )

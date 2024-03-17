@@ -5,16 +5,8 @@ sys.path.append('../../30_data_tools')
 from helper import load_dotenv
 from datetime import datetime
 import pandas as pd
-
-
-def load_data( pkl_path ):
-    data = pd.read_pickle(pkl_path)
-    data.loc[
-        :,
-        'timestamp'
-    ] = datetime.fromtimestamp( int(pkl_path.name.strip(pkl_path.suffix)) )
-
-    return data
+from file_interaction import get_generic_image_filepath, upload_file, download_blob, get_blobs
+from generic_image_db_interaction import get_generic_images
 
 
 def generate_screen( halftone_path, cyan_path, magenta_path, yellow_path, black_path ):
@@ -24,39 +16,72 @@ def generate_screen( halftone_path, cyan_path, magenta_path, yellow_path, black_
         capture_output=True
     )
 
+
 def get_images_to_process( config ):
-    pkls = list(config['GENERIC_INFORMATION_DATA_DIR'].glob('./*.pkl'))
-    data = pd.concat([load_data(pkl_path) for pkl_path in pkls])
-    halftone_images = data.apply(lambda row: row.basic_name.replace('$PLACEHOLDER$',row.method) + ".jpg", axis=1).unique()
+    data = get_generic_images()
+    all_files = get_blobs( filter='generic_data/')
 
     images_to_process = []
-    for img_name in halftone_images:
-        img_path = config['GENERIC_GENERATED_DATA_DIR'] / img_name
-        cyan_path = img_path.parent / img_path.name.replace( img_path.suffix, '.C.tif' )
+    for i in tqdm(range(data.shape[0])):
+        row = data.iloc[i]
+        halftone_available = len([af for af in all_files if f"{ row.job }.{ row.pdf_filename }.halftone{ config['LOFI_DPI'] }dpi.{ row.method }.{ row.idx }.jpg" in af]) > 0
+        black_available = len([af for af in all_files if f"{ row.job }.{ row.pdf_filename }.halftone{ config['LOFI_DPI'] }dpi.{ row.method }.{ row.idx }.K" in af]) > 0
 
-        if img_path.exists() and cyan_path.exists() == False:
-            images_to_process.append( img_path )
+        if halftone_available and black_available == False:
+            images_to_process.append( row.name )
 
-    return images_to_process
+    return data.loc[
+        data.index.isin( images_to_process )
+    ]
 
 
 def main():
     config = load_dotenv()
+    images_to_process = get_images_to_process( config )
+
+    print( 'started' )
+
+    for i in tqdm(range(images_to_process.shape[0])):
+        temp_files = []
+        row = images_to_process.iloc[i]
+        res = get_generic_image_filepath( row.pdf_filename, row.job, row.method, row.idx )
+        
+        if res:
+            img_path, storage_type = res
+            jpg_file_name = img_path.split('/')[-1]
+
+            temp_img_path = config['TEMP_PROCESSING_DIR'] / jpg_file_name
+            with temp_img_path.open('wb') as f:
+                f.write(download_blob( img_path ).getbuffer())
+
+            temp_files.append(temp_img_path)
+            img_path = temp_img_path
+
+            cyan_path = config['TEMP_PROCESSING_DIR'] / f'{ jpg_file_name.replace(".jpg","") }.C.tif'
+            magenta_path = config['TEMP_PROCESSING_DIR'] / f'{ jpg_file_name.replace(".jpg","") }.M.tif'
+            yellow_path = config['TEMP_PROCESSING_DIR'] / f'{ jpg_file_name.replace(".jpg","") }.Y.tif'
+            black_path = config['TEMP_PROCESSING_DIR'] / f'{ jpg_file_name.replace(".jpg","") }.K.tif'
+            temp_files += [cyan_path, magenta_path, yellow_path, black_path]
+            blob_prefix_path = 'generic_data/'
 
 
-    for img_path in tqdm(get_images_to_process( config )):
-        cyan_path = img_path.parent / img_path.name.replace( img_path.suffix, '.C.tif' )
-        magenta_path = img_path.parent / img_path.name.replace( img_path.suffix, '.M.tif' )
-        yellow_path = img_path.parent / img_path.name.replace( img_path.suffix, '.Y.tif' )
-        black_path = img_path.parent / img_path.name.replace( img_path.suffix, '.K.tif' )
+            generate_screen(
+                img_path.resolve(),
+                cyan_path.resolve(),
+                magenta_path.resolve(),
+                yellow_path.resolve(),
+                black_path.resolve()
+            )
 
-        generate_screen(
-            img_path.resolve(),
-            cyan_path.resolve(),
-            magenta_path.resolve(),
-            yellow_path.resolve(),
-            black_path.resolve()
-        )
+            # upload nach azure
+            upload_file( cyan_path, blob_prefix_path )
+            upload_file( magenta_path, blob_prefix_path )
+            upload_file( yellow_path, blob_prefix_path )
+            upload_file( black_path, blob_prefix_path )
+
+            # temp Ordner aufräumen
+            for f in temp_files:
+                f.unlink()
 
  
 if __name__ == "__main__":

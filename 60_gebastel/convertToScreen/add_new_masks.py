@@ -13,5 +13,5 @@ if __name__ == '__main__':
     move_files()
     print("files moved")
 
-    update_generic_images_db()
-    print("images written")
+    # update_generic_images_db()
+    # print("images written")

@@ -66,9 +66,11 @@ def process_separations( separation_to_process ):
             add_related_file( row.job, row.filename, variant_name, 'Y', yellow_path.name )
             add_related_file( row.job, row.filename, variant_name, 'K', black_path.name )
 
-    # temp Ordner aufräumen
-    for f in temp_files:
-        f.unlink()
+            # temp Ordner aufräumen
+            for f in temp_files:
+                f.unlink()
+
+            temp_files = []
 
 
 def main():

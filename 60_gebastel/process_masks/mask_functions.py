@@ -6,7 +6,7 @@ from dotenv import dotenv_values
 import sys
 sys.path.append('../../30_data_tools/')
 from helper import load_dotenv
-from file_interaction import upload_buffer
+from file_interaction import upload_buffer, download_blob
 import cv2
 import pickle
 
@@ -53,12 +53,21 @@ def load_masks( mask_path ):
         skaliert diese und montiert sie
         in die Gesamtmaske ein
     """
-    with mask_path.open('rb') as pkl_file:
-        masks = pickle.load(pkl_file)
+    if mask_path is None:
+        raise Exception('file not available')
     
+    mask_path, storage_type = mask_path
+
+    if storage_type == 'azure':
+        masks = pickle.loads( download_blob(mask_path).getbuffer() )
+    else:
+        with mask_path.open('rb') as pkl_file:
+            masks = pickle.load(pkl_file)
+
     for m in masks:
         m['bbox'] = [int(val) for val in m['bbox']]
         m['mask'] = load_mask_img( m )
+        m['area'] = m['mask'].sum()
     
     return masks
 
@@ -82,6 +91,11 @@ def save_masks( masks, mask_path ):
 
 
 def get_text_boxes( img, min_conf=50 ):
+    """
+        Erkennt Textboxen auf dem übergebenen Bild
+        und gibt diese mit der erkannten Confidence zurück.
+    """
+
     load_dotenv()
     res = pytesseract.image_to_data(
         img,
@@ -177,7 +191,6 @@ def filter_intersected_masks( masks ):
     config = get_config()
     delete = []
     whole_masks = {}
-    [get_whole_mask(m) for m in masks]
 
     for a in range(len(masks)):
         if a not in delete:
