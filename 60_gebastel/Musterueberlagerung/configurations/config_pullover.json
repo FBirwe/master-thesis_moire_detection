@@ -109,25 +109,25 @@
     },
     "adjustments" : {
         "scale" : {
-            "weight" : 0.8,
-            "max_size" : 1.9
+            "weight" : 0.3,
+            "max_size" : 1.5
         },
         "rotation" : {
             "weight" : 1,
-            "base_degree" : 45,
-            "degree_span" : 0
+            "base_degree" : 90,
+            "degree_span" : 5
         },
         "pillow_disortion" : {
             "weight" : 0,
-            "max_depth" : 0.25
+            "max_depth" : 0.5
         },
         "blow_up_centered" : {
-            "weight" : 0.25,
+            "weight" : 0.5,
             "c" : 10,
             "excludes" : ["contract_centered"]
         },
         "blow_up_region" : {
-            "weight" : 0.25,
+            "weight" : 0.5,
             "min_count" : 3,
             "max_count" : 8,
             "min_radius" : 30,
@@ -135,12 +135,12 @@
             "c" : 0.6
         },
         "contract_centered" : {
-            "weight" : 0.25,
+            "weight" : 0.5,
             "c" : 10,
             "excludes" : ["blow_up_centered"]
         },
         "contract_region" : {
-            "weight" : 0.25,
+            "weight" : 0.5,
             "min_count" : 3,
             "max_count" : 8,
             "min_radius" : 30,
@@ -148,26 +148,26 @@
             "c" : 0.6
         },
         "stretch" : {
-            "weight" : 1,
+            "weight" : 0.3,
             "min_stretch_x" : 1,
             "max_stretch_x" : 1.5,
             "min_stretch_y" : 1,
             "max_stretch_y" : 1
         },
         "trapezoidal_distortion" : {
-            "weight" : 0,
+            "weight" : 0.5,
             "chance_directions" : [0.25, 0.25, 0.25, 0.25],
-            "min_strength_1" : 0.25,
-            "max_strength_1" : 0.5,
-            "min_strength_2" : 0.25,
-            "max_strength_2" : 0.5,
+            "min_strength_1" : -0.2,
+            "max_strength_1" : 0.2,
+            "min_strength_2" : -0.2,
+            "max_strength_2" : 0.2,
             "excludes" : ["uniform_trapezoidal_distortion"]
         },
         "uniform_trapezoidal_distortion" : {
-            "weight" : 0,
+            "weight" : 0.5,
             "chance_directions" : [0.25, 0.25, 0.25, 0.25],
-            "min_strength" : 0,
-            "max_strength" : 0.25,
+            "min_strength" : -0.2,
+            "max_strength" : 0.2,
             "excludes" : ["trapezoidal_distortion"]
         },
         "roll" : {
@@ -175,13 +175,13 @@
             "pattern_stretch_factor" : 1
         },
         "wave_deform" : {
-            "weight" : 0.5,
+            "weight" : 0.8,
             "min_wave_overlay_count" : 1,
             "max_wave_overlay_count" : 5,
-            "min_wave_length" : 120,
-            "max_wave_length" : 240,
-            "min_wave_depth" : 20,
-            "max_wave_depth" : 35
+            "min_wave_length" : 60,
+            "max_wave_length" : 90,
+            "min_wave_depth" : 5,
+            "max_wave_depth" : 8
         }
     },
     "jobs_to_ignore" : [

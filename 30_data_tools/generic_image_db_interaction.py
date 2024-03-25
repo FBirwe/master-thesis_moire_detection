@@ -198,3 +198,60 @@ def update_temp_masks():
                 
             c.close()
             con.commit()
+
+
+def load_mask_configuration_file( job, pdf_filename, method, idx, mask_id ):
+    dotenv = load_dotenv()
+    
+    with sqlite3.connect( dotenv['DB_PATH'] ) as con:
+        c = con.cursor()
+        out = {
+            'job' : job,
+            'pdf_filename' : pdf_filename,
+            'method' : method,
+            'idx' : idx,
+            'mask_id' : mask_id,
+            'effects' : [],
+            'effect_order' : []
+        }
+
+        c.execute(
+            f'''
+                SELECT bbox, ssim, overlay_intensity_C, overlay_intensity_M, overlay_intensity_Y, overlay_intensity_K, pattern, pattern_position FROM mask
+                WHERE job='{ job }' AND pdf_filename='{ pdf_filename }' AND method='{ method }' AND idx={ idx } AND mask_id='{ mask_id }'
+            '''
+        )
+        # maske laden
+        mask = c.fetchone()
+        out['bbox'] = [int(val) for val in mask[0].split(';')]
+        out['ssim'] = float(mask[1])
+        out['overlay_intensity_C'] = float(mask[2])
+        out['overlay_intensity_M'] = float(mask[3])
+        out['overlay_intensity_Y'] = float(mask[4])
+        out['overlay_intensity_K'] = float(mask[5])
+        out['pattern'] = mask[6]
+        out['pattern_position'] = [int(val) for val in mask[7].split(';')]
+
+        # adjustments laden
+        c.execute(
+            f'''
+                SELECT execution_index, adjustment, features FROM adjustment_per_mask apm 
+                WHERE job='{ job }' AND pdf_filename='{ pdf_filename }' AND method='{ method }' AND idx={ idx } AND mask_id='{ mask_id }'
+                ORDER BY execution_index ASC
+            '''
+        )
+        adjustments = c.fetchall()
+
+        for _,effect_name,features_string in adjustments:
+            out['effect_order'].append(effect_name)
+            features = json.loads(features_string)
+            features['effect_name'] = effect_name
+            out['effects'].append(features)
+        
+        c.close()
+
+    return out
+
+
+if __name__ == '__main__':
+    update_temp_masks()

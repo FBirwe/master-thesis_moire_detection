@@ -217,15 +217,24 @@ def get_pattern_style(config, mask):
             )[0]    
         
         if effect_name == 'wave_deform':
-            effect['wave_length'] = random.randrange(
-                config['adjustments']['wave_deform']['min_wave_length'],
-                config['adjustments']['wave_deform']['max_wave_length']
+            effect['wave_overlay_count'] = random.randrange(
+                config['adjustments']['wave_deform']['min_wave_overlay_count'],
+                config['adjustments']['wave_deform']['max_wave_overlay_count']
             )
-            effect['wave_depth'] = random.randrange(
-                config['adjustments']['wave_deform']['min_wave_depth'],
-                config['adjustments']['wave_deform']['max_wave_depth']
-            )
-        
+            effect['wave_configurations'] = []
+
+            for i in range(effect['wave_overlay_count']):
+                effect['wave_configurations'].append((
+                    random.randrange(
+                        config['adjustments']['wave_deform']['min_wave_length'],
+                        config['adjustments']['wave_deform']['max_wave_length']
+                    ),
+                    random.randrange(
+                        config['adjustments']['wave_deform']['min_wave_depth'],
+                        config['adjustments']['wave_deform']['max_wave_depth']
+                    )
+                ))
+
         # Kissenverzerrung
         if effect_name == 'pillow_disortion':
             effect['pillow_depth_x'] = random.random() - 0.5
@@ -305,8 +314,7 @@ def get_pattern_img_by_style( row, config ):
         if effect['effect_name'] == 'wave_deform':
             pattern_img = wave_deform(
                 pattern_img,
-                effect['wave_length'],
-                effect['wave_depth']
+                effect['wave_configurations']
             )
     
     # Originalgröße wieder einrichten

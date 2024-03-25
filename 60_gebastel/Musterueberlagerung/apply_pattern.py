@@ -106,10 +106,14 @@ def apply_soft_light( tile_a, tile_b, mask=None, difference_threshold=0.01, sigm
 
     soft_light = ImageChops.soft_light( tile_a, tile_b )
 
+    print( np.array(soft_light).mean() )
+
     out = equal_brightness( np.array(soft_light) / 255, np.array(tile_a) / 255, mask=mask, difference_threshold=difference_threshold )
+    out = (out * 255).astype('uint8')
 
-    return (out * 255).astype('uint8')
+    print( out.mean() )
 
+    return out
 
     multiplied = apply_multiply( tile_a, tile_b, mask=mask, difference_threshold=difference_threshold )
     screened = apply_screen( tile_a, tile_b, mask=mask, difference_threshold=difference_threshold )
