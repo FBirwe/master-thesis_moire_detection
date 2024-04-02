@@ -1,4 +1,5 @@
 {
+    "config_name" : "general",
     "available_patterns" : [
         "perlin_noise.5.33.9.df1;01.CIRCLE",
         "plain_7.CIRCLE",
@@ -110,7 +111,8 @@
     "adjustments" : {
         "scale" : {
             "weight" : 0.5,
-            "max_size" : 1.5
+            "min_size" : 1.0,
+            "max_size" : 2.0
         },
         "rotation" : {
             "weight" : 1,

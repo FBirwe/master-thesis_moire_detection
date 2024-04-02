@@ -3,6 +3,7 @@ from helper import load_dotenv
 from pathlib import Path
 import sqlite3
 import json
+from datetime import datetime
 
 
 def get_tasks( project_id ):
@@ -97,7 +98,7 @@ def get_results_of_project( project_id, labels=[] ):
     c = con.cursor()
     c.execute(
         f"""
-            SELECT task_id,result FROM task_completion
+            SELECT task_id,updated_at,created_at,result FROM task_completion
             WHERE result != "[]" AND task_id IN ({ ','.join([str(t['id']) for t in tasks]) })
         """
     )
@@ -108,10 +109,14 @@ def get_results_of_project( project_id, labels=[] ):
 
     for r in rows:
         task_id = int(r[0])
-        res_task = json.loads(r[1])
+        updated_at = datetime.fromisoformat(r[1])
+        created_at = datetime.fromisoformat(r[2])
+        res_task = json.loads(r[3])
 
         for res in res_task:
             res['task_id'] = task_id
+            res['updated_at'] = updated_at
+            res['created_at'] = created_at
             res['img_name'] = tasks_by_id[task_id]['data_path']
             res['storage_type'] = tasks_by_id[task_id]['storage_type']
 

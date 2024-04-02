@@ -64,7 +64,7 @@ def get_img_pair( row, img_size, dotenv ):
 
 def get_available_moires():
     dotenv = load_dotenv()
-    moire_results = [r for r in get_results_of_project(2) if 'checked_moire' in r['rectanglelabels']]
+    moire_results = [r for r in get_results_of_project(2) if 'checked_moire' in r['labels']]
 
     results_frame = pd.DataFrame(
         [
@@ -76,7 +76,7 @@ def get_available_moires():
                     str(r['value']['width']),
                     str(r['value']['height'])
                 ]),
-                r['rectanglelabels'][0]
+                r['labels'][0]
             )
             for r in moire_results
         ],

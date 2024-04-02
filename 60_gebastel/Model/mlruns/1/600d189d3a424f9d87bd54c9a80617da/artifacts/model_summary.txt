@@ -1,0 +1,43 @@
+===========================================================================
+Layer (type:depth-idx)                             Param #
+===========================================================================
+MobileNetV3                                        --
+├─Sequential: 1-1                                  --
+│    └─Conv2dNormActivation: 2-1                   --
+│    │    └─Conv2d: 3-1                            432
+│    │    └─BatchNorm2d: 3-2                       32
+│    │    └─Hardswish: 3-3                         --
+│    └─InvertedResidual: 2-2                       --
+│    │    └─Sequential: 3-4                        744
+│    └─InvertedResidual: 2-3                       --
+│    │    └─Sequential: 3-5                        3,864
+│    └─InvertedResidual: 2-4                       --
+│    │    └─Sequential: 3-6                        5,416
+│    └─InvertedResidual: 2-5                       --
+│    │    └─Sequential: 3-7                        13,736
+│    └─InvertedResidual: 2-6                       --
+│    │    └─Sequential: 3-8                        57,264
+│    └─InvertedResidual: 2-7                       --
+│    │    └─Sequential: 3-9                        57,264
+│    └─InvertedResidual: 2-8                       --
+│    │    └─Sequential: 3-10                       21,968
+│    └─InvertedResidual: 2-9                       --
+│    │    └─Sequential: 3-11                       29,800
+│    └─InvertedResidual: 2-10                      --
+│    │    └─Sequential: 3-12                       91,848
+│    └─InvertedResidual: 2-11                      --
+│    │    └─Sequential: 3-13                       294,096
+│    └─InvertedResidual: 2-12                      --
+│    │    └─Sequential: 3-14                       294,096
+│    └─Conv2dNormActivation: 2-13                  --
+│    │    └─Conv2d: 3-15                           55,296
+│    │    └─BatchNorm2d: 3-16                      1,152
+│    │    └─Hardswish: 3-17                        --
+├─AdaptiveAvgPool2d: 1-2                           --
+├─Sequential: 1-3                                  --
+│    └─Linear: 2-14                                1,154
+===========================================================================
+Total params: 928,162
+Trainable params: 928,162
+Non-trainable params: 0
+===========================================================================

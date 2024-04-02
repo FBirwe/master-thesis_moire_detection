@@ -16,7 +16,7 @@ from PIL import Image
 Image.MAX_IMAGE_PIXELS = None
 import torch
 
-def render_mask( row, mask_generator, config ):
+def render_mask( row, mask_generator, config, use_filters=True ):
     res = get_related_filepath(
         row.job,
         config['target_variant'],
@@ -65,7 +65,7 @@ def render_mask( row, mask_generator, config ):
                 int(round(m['crop_box'][3] * factor_y))
             ]
 
-        masks = [m for m in masks if m['area'] < (img.size[0] * img.size[1] * 0.25)]    
+        # masks = [m for m in masks if m['area'] < (img.size[0] * img.size[1] * 0.25)]    
         masks_out = []
 
         for m in masks:
@@ -79,17 +79,17 @@ def render_mask( row, mask_generator, config ):
             mask_out['mask'] = load_mask_img(mask_out)
             masks_out.append(mask_out)
 
-        
-        masks_out = [m for m in masks_out if is_below_max_size(m)]
-        
-        # filter by size
-        masks_out = [m for m in masks_out if is_above_min_size(m)]
+        if use_filters:
+            masks_out = [m for m in masks_out if is_below_max_size(m)]
+            
+            # filter by size
+            masks_out = [m for m in masks_out if is_above_min_size(m)]
 
-        # filter by text box
-        masks_out = [m for m in masks_out if is_text_mask( img, m ) == False]
+            # filter by text box
+            masks_out = [m for m in masks_out if is_text_mask( img, m ) == False]
 
-        # filter duplicates
-        masks_out = filter_intersected_masks( masks_out )
+            # filter duplicates
+            masks_out = filter_intersected_masks( masks_out )
         
         return masks_out
 

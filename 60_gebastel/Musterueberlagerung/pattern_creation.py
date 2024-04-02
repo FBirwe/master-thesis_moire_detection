@@ -176,7 +176,10 @@ def get_pattern_style(config, mask):
         
         # Skalierung
         if effect_name == 'scale':
-            effect['scale'] = config['adjustments']['scale']['max_size']
+            effect['scale'] = random.random() * (
+                config['adjustments']['scale']['max_size'] - 
+                config['adjustments']['scale']['min_size']
+            ) + config['adjustments']['scale']['min_size']
 
         if effect_name == 'stretch':
             effect['stretch_x'] = random.random() * (

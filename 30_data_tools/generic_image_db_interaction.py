@@ -29,13 +29,13 @@ def get_generic_images():
         )
 
 
-def write_generic_image( pdf_filename, job, img_type, variant_name, method, idx ):
+def write_generic_image( pdf_filename, job, img_type, variant_name, method, idx, config_name ):
     with sqlite3.connect( dotenv['DB_PATH'] ) as con:
         c = con.cursor()
 
         sql_string = f'''
-            INSERT INTO generic_image ('pdf_filename','job','type','variant_name','method','idx','timestamp')
-            VALUES ('{ pdf_filename }','{ job }','{ img_type }','{ variant_name }','{ method }',{ idx },'{ datetime.now() }')
+            INSERT INTO generic_image ('pdf_filename','job','type','variant_name','method','idx','timestamp','config_name')
+            VALUES ('{ pdf_filename }','{ job }','{ img_type }','{ variant_name }','{ method }',{ idx },'{ datetime.now() }','{ config_name }')
         '''
         c.execute(sql_string)
         c.close()
@@ -43,13 +43,13 @@ def write_generic_image( pdf_filename, job, img_type, variant_name, method, idx 
         con.commit()
 
 
-def write_mask( pdf_filename, job, img_type, variant_name, method, idx, mask_id, bbox, ssim, overlay_intensities, pattern, pattern_position ):
+def write_mask( pdf_filename, job, img_type, variant_name, method, idx, mask_id, bbox, ssim, overlay_intensities, pattern, pattern_position, k_mean_coverage, k_std_coverage ):
     with sqlite3.connect( dotenv['DB_PATH'] ) as con:
         c = con.cursor()
 
         sql_string = f'''
-            INSERT INTO mask ('pdf_filename','job','type','variant_name','method','idx','mask_id','bbox','ssim','overlay_intensity_C','overlay_intensity_M','overlay_intensity_Y','overlay_intensity_K','pattern','pattern_position')
-            VALUES ('{ pdf_filename }','{ job }','{ img_type }','{ variant_name }','{ method }',{ idx },'{ mask_id }','{ ";".join([str(b) for b in bbox]) }',{ ssim },{ overlay_intensities[0] },{ overlay_intensities[1] },{ overlay_intensities[2] },{ overlay_intensities[3] },'{ pattern }','{ pattern_position[0] };{ pattern_position[1] }')
+            INSERT INTO mask ('pdf_filename','job','type','variant_name','method','idx','mask_id','bbox','ssim','overlay_intensity_C','overlay_intensity_M','overlay_intensity_Y','overlay_intensity_K','pattern','pattern_position','K_mean_coverage','K_std_coverage')
+            VALUES ('{ pdf_filename }','{ job }','{ img_type }','{ variant_name }','{ method }',{ idx },'{ mask_id }','{ ";".join([str(b) for b in bbox]) }',{ ssim },{ overlay_intensities[0] },{ overlay_intensities[1] },{ overlay_intensities[2] },{ overlay_intensities[3] },'{ pattern }','{ pattern_position[0] };{ pattern_position[1] }',{ k_mean_coverage },{ k_std_coverage })
         '''
         c.execute(sql_string)
         c.close()
@@ -76,6 +76,7 @@ def save_generic_image( rows_of_image ):
     pdf_filename = rows_of_image[0]['pdf_filename']
     method = rows_of_image[0]['method']
     idx = rows_of_image[0]['idx']
+    config_name = rows_of_image[0]['config_name']
 
     write_generic_image(
         pdf_filename,
@@ -83,7 +84,8 @@ def save_generic_image( rows_of_image ):
         '4c',
         f'halftone{ dotenv["LOFI_DPI"] }dpi',
         method,
-        idx
+        idx,
+        config_name
     )
 
     for row in rows_of_image:
@@ -106,7 +108,9 @@ def save_generic_image( rows_of_image ):
                 row['overlay_intensity_K']
             ],
             row['pattern'],
-            row['pattern_img_position']
+            row['pattern_img_position'],
+            row['K_mean_coverage'],
+            row['K_std_coverage']
         )
 
         for i in range(len(row['effects'])):

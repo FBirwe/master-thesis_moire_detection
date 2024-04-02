@@ -52,6 +52,14 @@ def copy_blob( source_file_path, target_file_path ):
     copied_blob.start_copy_from_url(source_blob)
 
 
+def delete_blob( file_path ):
+    blob_service_client = BlobServiceClient.from_connection_string(dotenv['AZURE_CONNECTION_STRING'])
+    blob_client = blob_service_client.get_blob_client(dotenv['AZURE_CONTAINER_NAME'], file_path)
+
+    # Delete the original blob
+    blob_client.delete_blob()
+
+
 def upload_file( filepath, prefix_path, filename=None ):
     if filename == None:
         filename = filepath.name
@@ -99,13 +107,25 @@ def get_batch_files( batch_type=None ):
     return blobs
 
 
-def get_blobs( filter=None ):
+def get_blobs( filter=None, include_metadata=False ):
     container = ContainerClient.from_connection_string(conn_str=dotenv['AZURE_CONNECTION_STRING'], container_name=dotenv['AZURE_CONTAINER_NAME'])
-    
+    out = []
     if filter:
-        return list(container.list_blob_names( name_starts_with=filter ))
+        generator = container.list_blobs( name_starts_with=filter )
+    else:
+        generator = container.list_blobs()
 
-    return list(container.list_blob_names())
+    for blob in generator:
+        if include_metadata:
+            out.append(blob)
+        else:
+            out.append(blob.name)
+
+    return out
+    # if filter:
+    #     return list(container.list_blob_names( name_starts_with=filter ))
+
+    # return list(container.list_blob_names())
 
 
 def get_data_files():

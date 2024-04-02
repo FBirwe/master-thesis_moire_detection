@@ -117,6 +117,7 @@ def load_dotenv():
     # config['GENERIC_LABELSTUDIO_DATA_DIR'] = config['DATA_DIR'] / '11_labelstudio_generic_data'
     config['MODEL_DIR'] = (script_file_path / config['MODEL_DIR']).resolve()
     config['PATTERN_DIR'] = (script_file_path / config['PATTERN_DIR']).resolve()
+    config['TILE_DATASET_DIR'] = Path( config['TILE_DATASET_DIR'] )
     # config['SORT_DIR'] = config['DATA_DIR'] / config['SORT_DIR']
     config['DB_PATH'] = script_file_path / config['DB_PATH']
     config['LABELING_JSON_PATH'] = Path( config['LABELING_JSON_PATH'] )
@@ -127,6 +128,7 @@ def load_dotenv():
     config['LABEL_STUDIO_DB_PATH'] = Path( config['LABEL_STUDIO_DB_PATH'] )
     config['AZURE_CONNECTION_STRING'] = f'DefaultEndpointsProtocol=https;AccountName={ config["AZURE_ACCOUNT_NAME"] };AccountKey={ config["AZURE_ACCOUNT_KEY"] };EndpointSuffix=core.windows.net'
     os.environ['TESSDATA_PREFIX'] = str(Path( config['TESSDATA_PREFIX'] ).resolve())
+    config['ATTACHMENT_DIR'] = Path( config['ATTACHMENT_DIR'] )
 
     return config
 

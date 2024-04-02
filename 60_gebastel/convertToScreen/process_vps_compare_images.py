@@ -84,5 +84,7 @@ if __name__ == '__main__':
 
     data = get_pdf_page_processing_status( variant_name, type_name )
     data_to_update = data.loc[data.file_available == False]
+    # data_to_update = data_to_update.iloc[:10]
+    # print( data_to_update.filename )
 
     generate_4c_images( data_to_update )

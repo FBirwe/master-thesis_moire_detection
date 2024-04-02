@@ -1,4 +1,5 @@
 {
+    "config_name" : "deform",
     "available_patterns" : [
         "perlin_noise.5.33.9.df1;01.CIRCLE",
         "plain_7.CIRCLE",
@@ -110,7 +111,8 @@
     "adjustments" : {
         "scale" : {
             "weight" : 0,
-            "max_size" : 1.5
+            "min_size" : 1.0,
+            "max_size" : 2.0
         },
         "rotation" : {
             "weight" : 1,
@@ -123,8 +125,7 @@
         },
         "blow_up_centered" : {
             "weight" : 0.5,
-            "c" : 10,
-            "excludes" : ["contract_centered"]
+            "c" : 10
         },
         "blow_up_region" : {
             "weight" : 0,
@@ -136,8 +137,7 @@
         },
         "contract_centered" : {
             "weight" : 0.5,
-            "c" : 10,
-            "excludes" : ["blow_up_centered"]
+            "c" : 10
         },
         "contract_region" : {
             "weight" : 0,
@@ -160,15 +160,13 @@
             "min_strength_1" : -0.2,
             "max_strength_1" : 0.2,
             "min_strength_2" : -0.2,
-            "max_strength_2" : 0.2,
-            "excludes" : ["uniform_trapezoidal_distortion"]
+            "max_strength_2" : 0.2
         },
         "uniform_trapezoidal_distortion" : {
             "weight" : 0.5,
             "chance_directions" : [0.25, 0.25, 0.25, 0.25],
             "min_strength" : -0.2,
-            "max_strength" : 0.2,
-            "excludes" : ["trapezoidal_distortion"]
+            "max_strength" : 0.2
         },
         "roll" : {
             "weight" : 0,
