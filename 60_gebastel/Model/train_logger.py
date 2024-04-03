@@ -22,6 +22,7 @@ class TrainLogger:
         self.current_mode = "undefined"
         self.start_timestamp = None
         self.end_timestamp = None
+        self.current_epoch = -1
 
 
     def log_hyperparams( self, hyper_params ):
@@ -62,7 +63,8 @@ class TrainLogger:
             'metric_name' : metric_name,
             'value' : value,
             'timestamp' : datetime.now().isoformat(),
-            'mode' : self.current_mode
+            'mode' : self.current_mode,
+            'epoch' : self.current_epoch
         }
 
         if (step is None) == False:
@@ -71,6 +73,8 @@ class TrainLogger:
         self.tracked_metrics.append(metric_log_entry)
         self.write_log_summary()
 
+    def set_epoch( self, epoch ):
+        self.current_epoch = epoch
 
     def log_summary( self, summary_string ):
         self.model_summary = summary_string
