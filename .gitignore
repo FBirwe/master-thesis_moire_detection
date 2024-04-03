@@ -163,3 +163,4 @@ cython_debug/
 60_gebastel/Model/result_images
 60_gebastel/getRandomPages/00_data_out/*
 /60_gebastel/Musterueberlagerung/10_marker_images
+60_gebastel/Model/run_config.json

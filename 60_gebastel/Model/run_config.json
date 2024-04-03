@@ -1,6 +1,6 @@
 {
     "n_epochs" : 25,
-    "learning_rate" : 0.0001,
+    "learning_rate" : 0.005,
     "model_architecture" : "Resnet50",
     "continue_from" : "2024-04-02_resnet50_002"
 }
