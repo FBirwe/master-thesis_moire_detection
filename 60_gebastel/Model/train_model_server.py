@@ -40,7 +40,7 @@ model = model.to(device)
 torch.manual_seed(42)
 torch.cuda.manual_seed(42)
 
-epochs = 15
+epochs = 5
 learning_rate = 0.001
 loss_fn = nn.CrossEntropyLoss()
 accuracy_fn = Accuracy(task="multiclass", num_classes=2).to(device)
@@ -65,10 +65,10 @@ with train_logger.start_run():
 
     for t in range(epochs):
         print(f"Epoch {t+1} -------------------------------")
-        # train(available_datasets['train']['dataloader'], model, device, loss_fn, optimizer, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
+        train(available_datasets['train']['dataloader'], model, device, loss_fn, optimizer, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
         
-        # print("validate")
-        # validate(available_datasets['val']['dataloader'], model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
+        print("validate")
+        validate(available_datasets['val']['dataloader'], model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
 
 
     train_logger.save_model( model )
