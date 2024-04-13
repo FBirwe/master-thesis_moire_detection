@@ -21,10 +21,9 @@ def get_datasets( dataset_directory=dotenv['TILE_DATASET_DIR'] ):
 
     # Create transform function
     transforms_data = transforms.Compose([
-        transforms.Resize((224, 224)),   #must same as here
-        transforms.CenterCrop((224, 224)),
+        # transforms.ColorJitter(brightness=0.5,contrast=0.5),
         transforms.ToTensor(),
-        transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
+        # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
     ])
 
     for key in available_datasets:
@@ -35,7 +34,7 @@ def get_datasets( dataset_directory=dotenv['TILE_DATASET_DIR'] ):
     for key in available_datasets:
         print(f'{ key } size', len(available_datasets[key]['dataset']))
 
-    print('class names', available_datasets[list(available_datasets.keys())[0]]['dataset'].classes)
+    print('class names', available_datasets['train']['dataset'].classes)
 
     return available_datasets
 

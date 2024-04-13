@@ -22,6 +22,8 @@ import sys
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 from io import BytesIO
+from ffc_resnet import ffc_resnet50
+
 
 def load_config():
     if len(sys.argv) <= 1:
@@ -61,13 +63,28 @@ def main():
         else:
             if config['model_architecture'] == 'Resnet50':
                 model = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)
-        
-            num_features = model.fc.in_features 
-            # Add a fully-connected layer for classification
-            model.fc = nn.Sequential(
-                nn.Linear(num_features, 2),
-                nn.Sigmoid()
-            )
+
+                num_features = model.fc.in_features 
+                # Add a fully-connected layer for classification
+                model.fc = nn.Sequential(
+                    nn.Linear(num_features, 2),
+                    nn.Sigmoid()
+                )
+            elif config['model_architecture'] == 'FFCRestnet50':
+                model = ffc_resnet50( pretrained=True )
+
+                num_features = model.fc.in_features 
+                # Add a fully-connected layer for classification
+                model.fc = nn.Sequential(
+                    nn.Linear(num_features, 2),
+                    nn.Sigmoid()
+                )
+            elif config['model_architecture'] == 'MobileNetV3':
+                model = models.mobilenet_v3_small( weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1 ) 
+                model.classifier = nn.Sequential(
+                    nn.Linear(model.classifier[0].in_features, 2)
+                )
+
         model = model.to(device)
 
         torch.manual_seed(42)
@@ -79,7 +96,7 @@ def main():
         precision_fn = Precision(task="multiclass", average='macro', num_classes=2).to(device)
         optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9)
 
-        train_logger = TrainLogger( 'resnet50' )
+        train_logger = TrainLogger( config['model_architecture'] )
 
         with train_logger.start_run():
             train_logger.log_hyperparams({
