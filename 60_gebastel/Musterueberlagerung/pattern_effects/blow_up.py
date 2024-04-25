@@ -7,7 +7,8 @@ from scipy.special import expit as logistic
 def interpolate_radius( r, radius, c, is_blow_up=True ):
     interpolation_factor = r / radius
     direction_factor = 1 if is_blow_up else -1
-    return (interpolation_factor * r + (1.0 - interpolation_factor) * c * math.sqrt(r)) * direction_factor
+    return (interpolation_factor * r + (1.0 - interpolation_factor) * c * math.sqrt(r) * direction_factor)
+    # return (interpolation_factor * r + (1.0 - interpolation_factor) * c * math.sqrt(r)) * direction_factor
     #return math.sin(r * math.pi * 2 / radius) * c * -1
 
 # def interpolate_radius( r, radius, c, is_blow_up=True ):

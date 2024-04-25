@@ -53,7 +53,7 @@ def main():
 
         print(f'device used: { device }')
 
-        available_datasets = get_datasets()
+        available_datasets = get_datasets( spatial_img=config['spatial_train_data'] )
 
         # model laden
         if 'continue_from' in config:
@@ -70,7 +70,7 @@ def main():
                     nn.Linear(num_features, 2),
                     nn.Sigmoid()
                 )
-            elif config['model_architecture'] == 'FFCRestnet50':
+            elif config['model_architecture'] == 'FFCResnet50':
                 model = ffc_resnet50( pretrained=True )
 
                 num_features = model.fc.in_features 

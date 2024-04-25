@@ -3,10 +3,54 @@ sys.path.append('../../30_data_tools/')
 from torchvision import datasets, transforms
 from helper import load_dotenv
 import torch
+import numpy as np
+import math 
+from scipy.ndimage import gaussian_filter
+from PIL import Image
 
 dotenv = load_dotenv()
 
-def get_datasets( dataset_directory=dotenv['TILE_DATASET_DIR'] ):
+def get_fft( input_img ):
+    ft = np.fft.ifftshift(np.array(input_img))
+    ft = np.fft.fft2(ft)
+    ft = np.fft.fftshift(ft)
+    
+    return ft
+
+
+def limit_frequencies( fft, inner_limit=None, outer_limit=None ):
+    center = (fft.shape[1] / 2, fft.shape[0] / 2)
+    for y in range(fft.shape[0]):
+        for x in range(fft.shape[1]):
+            r = math.sqrt( abs(center[0] - x) ** 2 + abs(center[1] - y) ** 2 )
+            
+            if outer_limit is not None and r > outer_limit:
+                fft[y,x] = 1
+    
+            if inner_limit is not None and r < inner_limit:
+                fft[y,x] = 1
+
+    return fft
+
+def get_frequency_representation( img ):
+    fft = np.abs( limit_frequencies( get_fft(img), inner_limit=5 ) )
+    fft = gaussian_filter(fft, sigma=3)
+
+    return fft
+
+
+def img_to_fft( img ):
+    fft = get_frequency_representation(img.convert('L'))
+    channel = (fft / fft.max() * 255).astype('uint8')
+    fft = np.zeros((channel.shape[0],channel.shape[1],3)).astype('uint8')
+    fft[:,:,0] = channel
+    fft[:,:,1] = channel
+    fft[:,:,2] = channel
+
+    return fft
+
+
+def get_datasets( dataset_directory=dotenv['TILE_DATASET_DIR'], spatial_img=True ):
     """
         Lädt die vorhandenen Datensets ein und
         transformiert sie so, dass pyTorch Modelle
@@ -20,11 +64,20 @@ def get_datasets( dataset_directory=dotenv['TILE_DATASET_DIR'] ):
             }
 
     # Create transform function
-    transforms_data = transforms.Compose([
-        # transforms.ColorJitter(brightness=0.5,contrast=0.5),
-        transforms.ToTensor(),
-        # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
-    ])
+    if spatial_img:
+        transforms_data = transforms.Compose([
+            transforms.ColorJitter(brightness=0.5,contrast=0.5),
+            transforms.ToTensor(),
+            # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
+        ])
+    else:
+        transforms_data = transforms.Compose([
+            transforms.ColorJitter(brightness=0.5,contrast=0.5),
+            transforms.Lambda(img_to_fft),
+            transforms.ToTensor(),
+            # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
+        ])
+
 
     for key in available_datasets:
         available_datasets[key]['dataset'] = datasets.ImageFolder(available_datasets[key]['path'], transforms_data)
