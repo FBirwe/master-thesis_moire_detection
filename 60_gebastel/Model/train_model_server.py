@@ -122,6 +122,9 @@ def main():
                 print("validate")
                 validate(available_datasets['val']['dataloader'], model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
 
+                print("validate")
+                validate(available_datasets['real_val']['dataloader'], model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
+
                 train_logger.save_model( model )
 
     except Exception as e:
