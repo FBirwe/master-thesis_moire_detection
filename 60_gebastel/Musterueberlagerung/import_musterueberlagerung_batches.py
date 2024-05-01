@@ -46,6 +46,9 @@ def import_image( batch_path ):
     )
     img_path = batch_path / img_name
 
+    if img_path.exists() == False and ( batch_path / 'synthetic_moire.jpg').exists():
+        ( batch_path / 'synthetic_moire.jpg').rename( img_path )
+
     generic_img_exists = img_path.exists()
     img_already_in_db = img_exists_in_db(
         data['rows'][0]['job'],

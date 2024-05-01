@@ -210,7 +210,6 @@ def main():
                 {
                     'rescale_factor' : config['processing_dpi'] / dotenv["LOFI_DPI"],
                     'processing_dpi' : config['processing_dpi'],
-                    'overlay_weight' : config['overlay_weight'],
                     'pattern_mask' : config['pattern_mask'],
                     'equal_brightness' : config['equal_brightness'],
                     'soft_light' : config['soft_light'],

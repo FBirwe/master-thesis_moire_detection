@@ -90,6 +90,7 @@ def get_pattern_style(config, mask):
     row = {}
     adjustments_to_use = get_adjustments_to_use([], config)
     row['pattern'] = random.choice(config['available_patterns'])
+    row['overlay_weight'] = random.random() * (config['overlay_weight_max'] - config['overlay_weight_min']) + config['overlay_weight_min']
     row['effect_order'] = adjustments_to_use
     row['effects'] = []
     shuffle( row['effect_order'] )
@@ -193,29 +194,56 @@ def get_pattern_style(config, mask):
 
 
         if effect_name == 'trapezoidal_distortion':
-            effect['trapezoidal_distortion_strength_1'] = random.random() * (
-                config['adjustments']['trapezoidal_distortion']['max_strength_1'] - 
-                config['adjustments']['trapezoidal_distortion']['min_strength_1']
-            ) + config['adjustments']['trapezoidal_distortion']['min_strength_1']
-            effect['trapezoidal_distortion_strength_2'] = random.random() * (
-                config['adjustments']['trapezoidal_distortion']['max_strength_2'] - 
-                config['adjustments']['trapezoidal_distortion']['min_strength_2']
-            ) + config['adjustments']['trapezoidal_distortion']['min_strength_2']
-            effect['trapezoidal_distortion_direction'] = random.choices(
-                ['left','right','top','bottom'],
-                weights=config['adjustments']['trapezoidal_distortion']['chance_directions'],
-                k=1
-            )[0]
+            effect['corner_adjustments'] = []
+
+            # top left
+            effect['corner_adjustments'].append((
+                random.random() * (config['adjustments']['trapezoidal_distortion']['top_left']['x']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['top_left']['x']['min']) + config['adjustments']['trapezoidal_distortion']['top_left']['x']['min'],
+                random.random() * (config['adjustments']['trapezoidal_distortion']['top_left']['y']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['top_left']['y']['min']) + config['adjustments']['trapezoidal_distortion']['top_left']['y']['min']
+            ))
+
+            # bottom left
+            effect['corner_adjustments'].append((
+                random.random() * (config['adjustments']['trapezoidal_distortion']['bottom_left']['x']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['bottom_left']['x']['min']) + config['adjustments']['trapezoidal_distortion']['bottom_left']['x']['min'],
+                random.random() * (config['adjustments']['trapezoidal_distortion']['bottom_left']['y']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['bottom_left']['y']['min']) + config['adjustments']['trapezoidal_distortion']['bottom_left']['y']['min']
+            ))
+
+            # bottom right
+            effect['corner_adjustments'].append((
+                random.random() * (config['adjustments']['trapezoidal_distortion']['bottom_right']['x']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['bottom_right']['x']['min']) + config['adjustments']['trapezoidal_distortion']['bottom_right']['x']['min'],
+                random.random() * (config['adjustments']['trapezoidal_distortion']['bottom_right']['y']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['bottom_right']['y']['min']) + config['adjustments']['trapezoidal_distortion']['bottom_right']['y']['min']
+            ))
+
+            # top right
+            effect['corner_adjustments'].append((
+                random.random() * (config['adjustments']['trapezoidal_distortion']['top_right']['x']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['top_right']['x']['min']) + config['adjustments']['trapezoidal_distortion']['top_right']['x']['min'],
+                random.random() * (config['adjustments']['trapezoidal_distortion']['top_right']['y']['max'] - 
+                config['adjustments']['trapezoidal_distortion']['top_right']['y']['min']) + config['adjustments']['trapezoidal_distortion']['top_right']['y']['min']
+            ))
+
 
         if effect_name == 'uniform_trapezoidal_distortion':
-            effect['trapezoidal_distortion_strength'] = random.random() * (
-                config['adjustments']['uniform_trapezoidal_distortion']['max_strength'] - 
-                config['adjustments']['uniform_trapezoidal_distortion']['min_strength']
-            ) + config['adjustments']['uniform_trapezoidal_distortion']['min_strength']
+            effect['trapezoidal_distortion_strength'] = (
+                random.random() * (
+                    config['adjustments']['uniform_trapezoidal_distortion']['x']['max'] - 
+                    config['adjustments']['uniform_trapezoidal_distortion']['x']['min']
+                ) + config['adjustments']['uniform_trapezoidal_distortion']['x']['min'],
+                random.random() * (
+                    config['adjustments']['uniform_trapezoidal_distortion']['y']['max'] - 
+                    config['adjustments']['uniform_trapezoidal_distortion']['y']['min']
+                ) + config['adjustments']['uniform_trapezoidal_distortion']['y']['min']
+            )
 
             effect['trapezoidal_distortion_direction'] = random.choices(
                 ['left','right','top','bottom'],
-                weights=config['adjustments']['trapezoidal_distortion']['chance_directions'],
+                weights=config['adjustments']['uniform_trapezoidal_distortion']['chance_directions'],
                 k=1
             )[0]    
         
@@ -300,11 +328,7 @@ def get_pattern_img_by_style( row, config ):
         if effect['effect_name'] == 'trapezoidal_distortion':
             pattern_img = distort_trapezoidal(
                 pattern_img,
-                (
-                    effect['trapezoidal_distortion_strength_1'],
-                    effect['trapezoidal_distortion_strength_2']
-                ),
-                effect['trapezoidal_distortion_direction']
+                effect['corner_adjustments']
             )
 
         if effect['effect_name'] == 'uniform_trapezoidal_distortion':

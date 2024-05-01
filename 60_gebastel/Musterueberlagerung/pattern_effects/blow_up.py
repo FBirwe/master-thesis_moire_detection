@@ -35,18 +35,19 @@ def radial_deformation( img, radius, center, c, is_blow_up=True ):
             if r <= radius:
                 r = interpolate_radius( r, radius, c, is_blow_up=is_blow_up )
 
-                alpha = (degrees * math.pi) / 180.0
-                newY = math.floor(r * math.sin(alpha)) + center[0]
-                newX = math.floor(r * math.cos(alpha)) + center[1]
+                if r > 0:
+                    alpha = math.radians(degrees)
+                    newY = math.floor(r * math.sin(alpha)) + center[0]
+                    newX = math.floor(r * math.cos(alpha)) + center[1]
 
-                if newX < img_out.shape[1] and newX >= 0 and newY < img_out.shape[0] and newY >= 0:
-                    img_out[
-                        newY,
-                        newX
-                    ] = img[
-                        y_coor,
-                        x_coor
-                    ]
+                    if newX < img_out.shape[1] and newX >= 0 and newY < img_out.shape[0] and newY >= 0:
+                        img_out[
+                            newY,
+                            newX
+                        ] = img[
+                            y_coor,
+                            x_coor
+                        ]
 
     return Image.fromarray(img_out).convert('L')
 

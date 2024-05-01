@@ -1,0 +1,16 @@
+{
+    "COLOR_MAP" : {
+        "checked_moire": "#db5561",
+        "checked_no_moire": "#627a8e",
+        "ssim_no_moire" : "#96aec3",
+        "True" : "#db5561",
+        "False" : "#84a6c4"
+    },
+    "COLOR_SEQUENCE" : [
+        "#627a8e",
+        "#96aec3",
+        "#cce5fc"
+    ]
+}
+
+

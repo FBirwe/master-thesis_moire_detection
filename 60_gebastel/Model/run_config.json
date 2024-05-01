@@ -2,5 +2,6 @@
     "n_epochs" : 25,
     "learning_rate" : 0.005,
     "model_architecture" : "Resnet50",
-    "spatial_train_data" : false
+    "spatial_train_data" : false,
+    "dataset_name" : "24-05-01_tile_dataset"
 }

@@ -50,12 +50,14 @@ def img_to_fft( img ):
     return fft
 
 
-def get_datasets( dataset_directory=dotenv['TILE_DATASET_DIR'], spatial_img=True ):
+def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'], spatial_img=True ):
     """
         Lädt die vorhandenen Datensets ein und
         transformiert sie so, dass pyTorch Modelle
         damit gut arbeiten können
     """
+    dataset_directory = dataset_base_directory / dataset_name
+
     available_datasets = {}
     for entry in dataset_directory.iterdir():
         if entry.is_dir() and entry.name.startswith('.') == False:

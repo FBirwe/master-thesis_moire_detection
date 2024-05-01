@@ -53,7 +53,7 @@ def main():
 
         print(f'device used: { device }')
 
-        available_datasets = get_datasets( spatial_img=config['spatial_train_data'] )
+        available_datasets = get_datasets( config['dataset_name'], spatial_img=config['spatial_train_data'] )
 
         # model laden
         if 'continue_from' in config:
@@ -68,7 +68,7 @@ def main():
                 # Add a fully-connected layer for classification
                 model.fc = nn.Sequential(
                     nn.Linear(num_features, 2),
-                    nn.Sigmoid()
+                    nn.Softmax(dim=1)
                 )
             elif config['model_architecture'] == 'FFCResnet50':
                 model = ffc_resnet50( pretrained=True )
@@ -77,12 +77,13 @@ def main():
                 # Add a fully-connected layer for classification
                 model.fc = nn.Sequential(
                     nn.Linear(num_features, 2),
-                    nn.Sigmoid()
+                    nn.Softmax(dim=1)
                 )
             elif config['model_architecture'] == 'MobileNetV3':
                 model = models.mobilenet_v3_small( weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1 ) 
                 model.classifier = nn.Sequential(
-                    nn.Linear(model.classifier[0].in_features, 2)
+                    nn.Linear(model.classifier[0].in_features, 2),
+                    nn.Softmax(dim=1)
                 )
 
         model = model.to(device)
@@ -100,6 +101,8 @@ def main():
 
         with train_logger.start_run():
             train_logger.log_hyperparams({
+                "dataset_name" : config['dataset_name'],
+                "data_type" : "spatial" if config['spatial_train_data'] else "frequency",
                 "epochs": config['n_epochs'],
                 "learning_rate": config['learning_rate'],
                 "batch_size": 64,
