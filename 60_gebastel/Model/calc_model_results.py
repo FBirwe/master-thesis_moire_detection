@@ -72,13 +72,13 @@ def cal_model_results( tile_paths, model ):
 
     batches.append(torch.stack(current_batch))
 
-    if torch.cuda.is_available():
-        batches = [bt.cuda() for bt in batches]
-
     # Prüfung wird durchgeführt
     results = []
     with torch.no_grad():
         for batch in tqdm(batches):
+            if torch.cuda.is_available():
+                batch = batch.cuda()
+
             pred = model(batch)
             results += pred
 
