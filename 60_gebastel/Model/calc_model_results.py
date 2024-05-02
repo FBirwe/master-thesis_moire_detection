@@ -30,10 +30,10 @@ def convert_results_to_df( tile_paths, results ):
     for i in range(len(tile_paths)):
         data.append({
             'tile_name' : tile_paths[i].name,
-            'category' : tile_paths[i].parent.name,
+            'label' : tile_paths[i].parent.name,
             'dataset' : tile_paths[i].parent.parent.name,
-            'result_moire' : results[i][0],
-            'result_no_moire' : results[i][1]
+            'result_moire' : float(results[i][0]),
+            'result_no_moire' : float(results[i][1])
         })
 
     return pd.DataFrame.from_dict(data)
