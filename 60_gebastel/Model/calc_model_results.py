@@ -110,3 +110,7 @@ def main():
 
     upload_buffer( stream.getbuffer(), f'modeL_results/{ model_name }_{ dataset_name }.pkl' )
     print("process finished")
+
+
+if __name__ == '__main__':
+    main()
