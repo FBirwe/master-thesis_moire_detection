@@ -15,9 +15,8 @@ BATCH_SIZE = 64
 
 def load_model( model_name ):
     bytesStream = download_blob( f'models/{ model_name }.pth' )
-    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    if device == 'cuda':
+    if torch.cuda.is_available():
         model = torch.load( BytesIO(bytesStream.getvalue()) )
     else:
         model = torch.load( BytesIO(bytesStream.getvalue()), map_location=torch.device('cpu') )
@@ -72,6 +71,9 @@ def cal_model_results( tile_paths, model ):
             current_batch = []
 
     batches.append(torch.stack(current_batch))
+
+    if torch.cuda.is_available():
+        batches = [bt.cuda() for bt in batches]
 
     # Prüfung wird durchgeführt
     results = []
