@@ -92,9 +92,15 @@ def main():
     else:
         datasets = sys.argv[3].split(";")
 
+    print("start process")
     model = load_model( model_name )
+    print("model loaded")
+
     tile_paths = load_dataset( dataset_name, datasets=datasets )
+    print("dataset loaded")
+
     results = cal_model_results( tile_paths, model )
+    print("results calculated")
 
     df = convert_results_to_df( tile_paths, results )
 
@@ -103,3 +109,4 @@ def main():
     df.to_pickle( stream )
 
     upload_buffer( stream.getbuffer(), f'modeL_results/{ model_name }_{ dataset_name }.pkl' )
+    print("process finished")
