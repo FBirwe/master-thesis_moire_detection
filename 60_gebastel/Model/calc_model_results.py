@@ -110,7 +110,7 @@ def main():
     stream = BytesIO()
     df.to_pickle( stream )
 
-    upload_buffer( stream.getbuffer(), f'modeL_results/{ model_name }_{ dataset_name }.pkl' )
+    upload_buffer( stream.getbuffer(), f'model_results/{ model_name }_{ dataset_name }.pkl' )
     print("process finished")
 
 
