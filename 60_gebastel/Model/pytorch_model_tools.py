@@ -94,7 +94,7 @@ def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'
     return available_datasets
 
 
-def run_model(dataloader, model, device, loss_fn, metrics=[], optimizer=None, mode='train', log_intervall=10, train_logger=None ):
+def run_model(dataloader, model, device, loss_fn, dataset, metrics=[], optimizer=None, mode='train', log_intervall=10, train_logger=None ):
     if mode == 'train':
         model.train()
     else:
@@ -132,25 +132,26 @@ def run_model(dataloader, model, device, loss_fn, metrics=[], optimizer=None, mo
             metric_string = f"[{current + 1} / {len(dataloader)}] loss: {mean_loss:3f}"
 
             if train_logger:
-                train_logger.log_metric("loss", f"{loss:3f}", step=(batch // log_intervall))
+                train_logger.log_metric( dataset, "loss", f"{loss:3f}", step=(batch // log_intervall))
     
             for i in range(len(metrics)):
                 metric_name, _ = metrics[i]
                 mean_metric = sum(running_metrics[metric_name]) / len(running_metrics[metric_name])
                 if train_logger:
-                    train_logger.log_metric(metric_name, f"{mean_metric:3f}", step=(batch // log_intervall))
+                    train_logger.log_metric( dataset, metric_name, f"{mean_metric:3f}", step=(batch // log_intervall))
                 metric_string += f" {metric_name}: {mean_metric:3f}"
 
             endchar = "\r" if batch != len(dataloader) - 1 else "\n"
             print(metric_string, end=endchar)
 
 
-def train(dataloader, model, device, loss_fn, optimizer, metrics=[], log_intervall=10, train_logger=None ):
+def train(dataloader, dataset, model, device, loss_fn, optimizer, metrics=[], log_intervall=10, train_logger=None ):
     run_model(
         dataloader,
         model,
         device,
         loss_fn,
+        dataset,
         optimizer=optimizer,
         metrics=metrics,
         train_logger=train_logger,
@@ -158,12 +159,13 @@ def train(dataloader, model, device, loss_fn, optimizer, metrics=[], log_interva
         log_intervall=log_intervall
     )
 
-def validate(dataloader, model, device, loss_fn, metrics=[], log_intervall=10, train_logger=None ):
+def validate(dataloader, dataset, model, device, loss_fn, metrics=[], log_intervall=10, train_logger=None ):
     run_model(
         dataloader,
         model,
         device,
         loss_fn,
+        dataset,
         optimizer=None,
         metrics=metrics,
         train_logger=train_logger,

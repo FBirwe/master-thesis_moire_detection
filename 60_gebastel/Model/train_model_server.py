@@ -117,13 +117,13 @@ def main():
             for t in range(config['n_epochs']):
                 train_logger.set_epoch(t+1)
                 print(f"Epoch {t+1} -------------------------------")
-                train(available_datasets['train']['dataloader'], model, device, loss_fn, optimizer, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
+                train(available_datasets['train']['dataloader'], 'train', model, device, loss_fn, optimizer, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
                 
                 print("validate")
-                validate(available_datasets['val']['dataloader'], model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
+                validate(available_datasets['val']['dataloader'], 'val', model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
 
                 print("validate - real val")
-                validate(available_datasets['real_val']['dataloader'], model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
+                validate(available_datasets['real_val']['dataloader'], 'real_val', model, device, loss_fn, train_logger=train_logger, metrics=[('accuracy',accuracy_fn), ('recall',recall_fn), ('precision',precision_fn)] )
 
                 train_logger.save_model( model )
 

@@ -58,12 +58,13 @@ class TrainLogger:
         json_data.close()
 
 
-    def log_metric( self, metric_name, value, step=None ):
+    def log_metric( self, dataset, metric_name, value, step=None ):
         metric_log_entry = {
             'metric_name' : metric_name,
             'value' : value,
             'timestamp' : datetime.now().isoformat(),
             'mode' : self.current_mode,
+            'dataset' : dataset,
             'epoch' : self.current_epoch
         }
 
