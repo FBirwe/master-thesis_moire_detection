@@ -1,12 +1,16 @@
 import sys
 sys.path.append('../../30_data_tools/')
 from torchvision import datasets, transforms
+from torchvision.transforms import v2
+
 from helper import load_dotenv
 import torch
 import numpy as np
 import math 
 from scipy.ndimage import gaussian_filter
 from PIL import Image
+from time import time
+
 
 dotenv = load_dotenv()
 
@@ -65,24 +69,34 @@ def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'
                 'path' : entry
             }
 
-    # Create transform function
-    if spatial_img:
-        transforms_data = transforms.Compose([
-            transforms.ColorJitter(brightness=0.5,contrast=0.5),
-            transforms.ToTensor(),
-            # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
-        ])
-    else:
-        transforms_data = transforms.Compose([
-            transforms.ColorJitter(brightness=0.5,contrast=0.5),
-            transforms.Lambda(img_to_fft),
-            transforms.ToTensor(),
-            # transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]) # normalization
-        ])
+    # load transformations
+    transformations = [
+        transforms.ToTensor()
+    ]
+    if spatial_img == False:
+        transformations.insert(0, transforms.Lambda(img_to_fft))
 
+    # Nur beim Training sollen die Augmentierungen angewandt werden
+    train_transformations = [
+        transforms.RandomApply([v2.ColorJitter(brightness=0.5,contrast=0.5)], p=0.5),
+        transforms.RandomApply([v2.RandomRotation(20)], p=0.5),
+        transforms.RandomApply([v2.RandomResize(224, 448)], p=0.5),
+        v2.CenterCrop(224)
+    ]
+
+    # Create transform function
+    data_transformation = transforms.Compose(transformations)
+    data_train_transformation = transforms.Compose([
+        *train_transformations,
+        *transformations
+    ])
 
     for key in available_datasets:
-        available_datasets[key]['dataset'] = datasets.ImageFolder(available_datasets[key]['path'], transforms_data)
+        if key == 'train':
+            available_datasets[key]['dataset'] = datasets.ImageFolder(available_datasets[key]['path'], data_train_transformation)
+        else:
+            available_datasets[key]['dataset'] = datasets.ImageFolder(available_datasets[key]['path'], data_transformation)
+
         available_datasets[key]['dataloader'] = torch.utils.data.DataLoader(available_datasets[key]['dataset'], batch_size=64, shuffle=True, num_workers=0)
 
     # print infos
@@ -95,6 +109,8 @@ def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'
 
 
 def run_model(dataloader, model, device, loss_fn, dataset, metrics=[], optimizer=None, mode='train', log_intervall=10, train_logger=None ):
+    start_timestamp = time()
+
     if mode == 'train':
         model.train()
     else:
@@ -143,6 +159,9 @@ def run_model(dataloader, model, device, loss_fn, dataset, metrics=[], optimizer
 
             endchar = "\r" if batch != len(dataloader) - 1 else "\n"
             print(metric_string, end=endchar)
+
+    end_timestamp = time()
+    print(f'run took { end_timestamp - start_timestamp }s')
 
 
 def train(dataloader, dataset, model, device, loss_fn, optimizer, metrics=[], log_intervall=10, train_logger=None ):

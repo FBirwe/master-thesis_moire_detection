@@ -158,7 +158,7 @@ def update_temp_masks():
             row = masks.loc[idx]
             
             for r in relevant_results:
-                filename = f'{ row.job }.{ row.pdf_filename }.{ row.method }.{ row.idx }.4c_{ dotenv["LOFI_DPI"] }.jpg'
+                filename = f'{ row.job }.{ row.pdf_filename }.{ row.variant_name }.{ row.method }.{ row.idx }.4c_{ dotenv["LOFI_DPI"] }.jpg'
                 bbox_string = f"{ r['bbox']['x'] };{ r['bbox']['y'] };{ r['bbox']['width'] };{ r['bbox']['height'] }"
 
                 if r['img_name'] == filename and row.bbox == bbox_string:

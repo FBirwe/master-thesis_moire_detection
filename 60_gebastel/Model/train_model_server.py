@@ -95,7 +95,11 @@ def main():
         accuracy_fn = Accuracy(task="multiclass", num_classes=2).to(device)
         recall_fn = Recall(task="multiclass", average='macro', num_classes=2).to(device)
         precision_fn = Precision(task="multiclass", average='macro', num_classes=2).to(device)
-        optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9)
+
+        if config['optimizer'] == 'adam':
+            optimizer = torch.optim.Adam(model.parameters(), lr=config['learning_rate'], betas=(0.9, 0.999), eps=1e-08, weight_decay=0)
+        else:
+            optimizer = torch.optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9)
 
         train_logger = TrainLogger( config['model_architecture'] )
 
@@ -108,7 +112,7 @@ def main():
                 "batch_size": 64,
                 "loss_function": loss_fn.__class__.__name__,
                 "metric_functions": [accuracy_fn.__class__.__name__,recall_fn.__class__.__name__,precision_fn.__class__.__name__],
-                "optimizer": "SGD",
+                "optimizer": config['optimizer'],
                 "device" : device
             })
 
