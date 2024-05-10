@@ -59,8 +59,18 @@ def load_dataset( dataset_name, datasets=None ):
 
 def cal_model_results( tile_paths, model ):
     # Datenset wird geladen
-    batches = []
     current_batch = []
+    results = []
+
+    def process_batch( batch ):
+        # Prüfung wird durchgeführt
+        with torch.no_grad():
+            if torch.cuda.is_available():
+                batch = batch.cuda()
+
+            pred = model(batch)
+            return pred.numpy().tolist()
+
 
     for tile_path in tqdm(tile_paths):
         tile = Image.open(tile_path)
@@ -68,22 +78,10 @@ def cal_model_results( tile_paths, model ):
 
         current_batch.append(transform(tile) / 255)
         if len(current_batch) == BATCH_SIZE:
-            batches.append(torch.stack(current_batch))
+            results += process_batch(torch.stack(current_batch))
             current_batch = []
 
-    batches.append(torch.stack(current_batch))
-
-    # Prüfung wird durchgeführt
-    results = []
-    with torch.no_grad():
-        for batch in tqdm(batches):
-            if torch.cuda.is_available():
-                batch = batch.cuda()
-
-            pred = model(batch)
-            print( pred )
-            results += pred
-
+    results += process_batch(torch.stack(current_batch))
     return results
 
 
