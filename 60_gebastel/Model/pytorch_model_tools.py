@@ -79,9 +79,9 @@ def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'
     # Nur beim Training sollen die Augmentierungen angewandt werden
     train_transformations = [
         transforms.RandomApply([v2.ColorJitter(brightness=0.5,contrast=0.5)], p=0.5),
-        transforms.RandomApply([v2.RandomRotation(20)], p=0.5),
-        transforms.RandomApply([v2.RandomResize(224, 448)], p=0.5),
-        v2.CenterCrop(224)
+        # transforms.RandomApply([v2.RandomRotation(20)], p=0.5),
+        # transforms.RandomApply([v2.RandomResize(224, 448)], p=0.5),
+        # v2.CenterCrop(224)
     ]
 
     # Create transform function
