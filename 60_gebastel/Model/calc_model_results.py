@@ -69,7 +69,7 @@ def cal_model_results( tile_paths, model ):
                 batch = batch.cuda()
 
             pred = model(batch)
-            return pred.numpy().tolist()
+            return pred.cpu().numpy().tolist()
 
 
     for tile_path in tqdm(tile_paths):
