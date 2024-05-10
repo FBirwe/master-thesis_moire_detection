@@ -1,8 +1,8 @@
 {
-    "n_epochs" : 25,
+    "n_epochs" : 10,
     "learning_rate" : 0.001,
     "model_architecture" : "Resnet50",
-    "spatial_train_data" : true,
-    "dataset_name" : "24-05-02_001_tile_dataset",
+    "spatial_train_data" : false,
+    "dataset_name" : "24-05-09_001_tile_dataset",
     "optimizer" : "adam"
 }

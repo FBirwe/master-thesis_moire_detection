@@ -29,6 +29,8 @@ def get_feature_importance_df( masks, adjustments_per_mask ):
         on='mask_id',
         how="left"
     )
+    regression_data.stretch_x.fillna(1,inplace=True)
+    regression_data.stretch_y.fillna(1,inplace=True)
 
     # Rotation
     regression_data = pd.merge(
@@ -144,7 +146,7 @@ def get_scale_data( adjustments_per_mask ):
         scale_data
     ], ignore_index=True)
 
-    return scale_data.loc[:,['mask_id','stretch_x','stretch_y']]
+    return scale_data.loc[:,['mask_id','stretch_x','stretch_y']].groupby('mask_id').sum().reset_index()
 
 
 def get_rotation_data( adjustments_per_mask ):
@@ -175,33 +177,39 @@ def get_contract_centered_data( adjustments_per_mask ):
 
 
 def get_corner_adjustments_for_uniform_distortion( row ):
+    if type(row.trapezoidal_distortion_strength) == float:
+        distortion_strength = (row.trapezoidal_distortion_strength,0)
+    else:
+        distortion_strength = row.trapezoidal_distortion_strength
+
+
     if row.trapezoidal_distortion_direction == 'top':
         corner_adjustments = [
-            (row.trapezoidal_distortion_strength,0),
+            distortion_strength,
             (0,0),
             (0,0),
-            (row.trapezoidal_distortion_strength,0)
+            distortion_strength
         ]
     elif row.trapezoidal_distortion_direction == 'left':
         corner_adjustments = [
-            (row.trapezoidal_distortion_strength,0),
-            (row.trapezoidal_distortion_strength,0),
+            distortion_strength,
+            distortion_strength,
             (0,0),
             (0,0)
         ]
     elif row.trapezoidal_distortion_direction == 'bottom':
         corner_adjustments = [
             (0,0),
-            (row.trapezoidal_distortion_strength,0),
-            (row.trapezoidal_distortion_strength,0),
+            distortion_strength,
+            distortion_strength,
             (0,0)
         ]
     else:
         corner_adjustments = [
             (0,0),
             (0,0),
-            (row.trapezoidal_distortion_strength,0),
-            (row.trapezoidal_distortion_strength,0)
+            distortion_strength,
+            distortion_strength
         ]
 
     return corner_adjustments

@@ -21,6 +21,7 @@ def load_model( model_name ):
     else:
         model = torch.load( BytesIO(bytesStream.getvalue()), map_location=torch.device('cpu') )
 
+    model.eval()
     return model
 
 
@@ -80,6 +81,7 @@ def cal_model_results( tile_paths, model ):
                 batch = batch.cuda()
 
             pred = model(batch)
+            print( pred )
             results += pred
 
     return results
