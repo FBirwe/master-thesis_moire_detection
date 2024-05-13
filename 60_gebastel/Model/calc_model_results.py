@@ -73,8 +73,8 @@ def cal_model_results( tile_paths, model ):
 
 
     for tile_path in tqdm(tile_paths):
-        tile = Image.open(tile_path)
-        transform = transforms.Compose([transforms.PILToTensor()])
+        with Image.open(tile_path) as tile:
+            transform = transforms.Compose([transforms.PILToTensor()])
 
         current_batch.append(transform(tile) / 255)
         if len(current_batch) == BATCH_SIZE:

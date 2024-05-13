@@ -14,39 +14,46 @@ from time import time
 
 dotenv = load_dotenv()
 
+def get_radius_map():
+    radius_map = torch.zeros((224,224))
+
+    for y in range(224):
+        radius_map[y,:] = torch.hypot(torch.arange(224) - 112, torch.Tensor([y - 112]))
+
+    return radius_map
+
+
 def get_fft( input_img ):
-    ft = np.fft.ifftshift(np.array(input_img))
-    ft = np.fft.fft2(ft)
-    ft = np.fft.fftshift(ft)
-    
+    img_torch = transforms.functional.to_tensor(input_img).squeeze(0) * 255
+    ft = torch.fft.ifftshift( img_torch )
+    ft = torch.fft.fft2( ft )
+    ft = torch.fft.fftshift( ft )
+
     return ft
 
 
-def limit_frequencies( fft, inner_limit=None, outer_limit=None ):
-    center = (fft.shape[1] / 2, fft.shape[0] / 2)
-    for y in range(fft.shape[0]):
-        for x in range(fft.shape[1]):
-            r = math.sqrt( abs(center[0] - x) ** 2 + abs(center[1] - y) ** 2 )
-            
-            if outer_limit is not None and r > outer_limit:
-                fft[y,x] = 1
+
+def limit_frequencies( fft, radius_map, inner_limit=None, outer_limit=None ):
+    if (inner_limit is None) == False:
+        fft[radius_map <= inner_limit] = 1
+
+    if (outer_limit is None) == False:
+        fft[radius_map >= outer_limit] = 1
     
-            if inner_limit is not None and r < inner_limit:
-                fft[y,x] = 1
-
-    return fft
-
-def get_frequency_representation( img ):
-    fft = np.abs( limit_frequencies( get_fft(img), inner_limit=5 ) )
-    fft = gaussian_filter(fft, sigma=3)
-
     return fft
 
 
-def img_to_fft( img ):
-    fft = get_frequency_representation(img.convert('L'))
-    channel = (fft / fft.max() * 255).astype('uint8')
-    fft = np.zeros((channel.shape[0],channel.shape[1],3)).astype('uint8')
+def get_frequency_representation( img, radius_map ):
+    fft = torch.abs( limit_frequencies( get_fft(img), radius_map, inner_limit=5 ) ).reshape((1,224,224))    
+    fft = transforms.functional.gaussian_blur(fft, (11,11), sigma=3)[0,:,:]
+
+    return fft
+
+
+def img_to_fft( img, radius_map ):
+    fft = get_frequency_representation(img.convert('L'), radius_map)
+    channel = (fft / fft.max() * 255)
+    fft = torch.zeros((channel.shape[0],channel.shape[1],3))
     fft[:,:,0] = channel
     fft[:,:,1] = channel
     fft[:,:,2] = channel
@@ -74,7 +81,9 @@ def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'
         transforms.ToTensor()
     ]
     if spatial_img == False:
-        transformations.insert(0, transforms.Lambda(img_to_fft))
+        radius_map = get_radius_map()
+
+        transformations.insert(0, transforms.Lambda(lambda img: img_to_fft(img, radius_map)))
 
     # Nur beim Training sollen die Augmentierungen angewandt werden
     train_transformations = [
