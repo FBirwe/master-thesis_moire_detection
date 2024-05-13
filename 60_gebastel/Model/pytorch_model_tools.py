@@ -58,7 +58,7 @@ def img_to_fft( img, radius_map ):
     fft[:,:,1] = channel
     fft[:,:,2] = channel
 
-    return fft
+    return fft.numpy().astype('uint8')
 
 
 def get_datasets( dataset_name, dataset_base_directory=dotenv['TILE_DATASET_DIR'], spatial_img=True ):
