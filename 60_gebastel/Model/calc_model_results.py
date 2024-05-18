@@ -34,10 +34,10 @@ def load_experiment( experiment_name ):
     return data
 
 
-def load_model( model_name ):
+def load_model( model_name, use_cpu=False ):
     bytesStream = download_blob( f'models/{ model_name }.pth' )
 
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and use_cpu == False:
         model = torch.load( BytesIO(bytesStream.getvalue()) )
     else:
         model = torch.load( BytesIO(bytesStream.getvalue()), map_location=torch.device('cpu') )
@@ -129,7 +129,7 @@ def main():
         use_cpu = True
 
     print("start process")
-    model = load_model( model_name )
+    model = load_model( model_name, use_cpu=use_cpu )
     print("model loaded")
 
     tile_paths = load_dataset( dataset_name, datasets=datasets )
