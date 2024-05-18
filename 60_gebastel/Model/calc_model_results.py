@@ -12,6 +12,7 @@ import pandas as pd
 import json
 from datetime import datetime
 from pytorch_model_tools import img_to_fft, get_radius_map
+from time import time
 
 
 dotenv = load_dotenv()
@@ -77,7 +78,7 @@ def load_dataset( dataset_name, datasets=None ):
     return tile_paths
 
 
-def cal_model_results( tile_paths, model, data_type="spatial" ):
+def cal_model_results( tile_paths, model, data_type="spatial", use_cpu=False ):
     # Datenset wird geladen
     current_batch = []
     results = []
@@ -85,7 +86,7 @@ def cal_model_results( tile_paths, model, data_type="spatial" ):
     def process_batch( batch ):
         # Prüfung wird durchgeführt
         with torch.no_grad():
-            if torch.cuda.is_available():
+            if torch.cuda.is_available() and use_cpu == False:
                 batch = batch.cuda()
 
             pred = model(batch)
@@ -122,6 +123,11 @@ def main():
     else:
         datasets = sys.argv[3].split(";")
 
+    if len(sys.argv) < 5:
+        use_cpu = False
+    else:
+        use_cpu = True
+
     print("start process")
     model = load_model( model_name )
     print("model loaded")
@@ -129,8 +135,10 @@ def main():
     tile_paths = load_dataset( dataset_name, datasets=datasets )
     print("dataset loaded")
 
-    results = cal_model_results( tile_paths, model, data_type=experiment_data['hyper_parameters']['data_type'] )
-    print("results calculated")
+    start = time()
+    results = cal_model_results( tile_paths, model, data_type=experiment_data['hyper_parameters']['data_type'], use_cpu=use_cpu )
+    end = time()
+    print(f"results calculated, took: { (end - start) }s")
 
     df = convert_results_to_df( tile_paths, results )
 
