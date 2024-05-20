@@ -155,12 +155,12 @@ cython_debug/
 
 
 # sonstiges
-60_gebastel/Musterueberlagerung/10_out/
-60_gebastel/Musterueberlagerung/11_pattern_images/
-60_gebastel/Model/dataset/*
-60_gebastel/Model/dataset_test
-60_gebastel/Model/temp
-60_gebastel/Model/result_images
-60_gebastel/getRandomPages/00_data_out/*
-/60_gebastel/Musterueberlagerung/10_marker_images
-60_gebastel/Model/run_config.json
+60_Codel/Musterueberlagerung/10_out/
+60_Codel/Musterueberlagerung/11_pattern_images/
+60_Codel/Model/dataset/*
+60_Codel/Model/dataset_test
+60_Codel/Model/temp
+60_Codel/Model/result_images
+60_Codel/getRandomPages/00_data_out/*
+/60_Codel/Musterueberlagerung/10_marker_images
+60_Codel/Model/run_config.json

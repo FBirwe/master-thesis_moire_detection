@@ -1,1 +1,0 @@
-python3 -m mlflow ui --backend-store-uri "sqlite:////Users/frederic.birwe/Library/CloudStorage/OneDrive-BertelsmannSE&Co.KGaA/Masterarbeit/10_db/mlflow.db"
